@@ -1,11 +1,13 @@
 # @mttzzz/nuxt-claude-infra
 
-Shared Per-session Claude Code test infrastructure для Nuxt-проектов: port-registry, Playwright MCP server, hooks (PreToolUse / PostToolUse / SessionStart / SessionEnd), `commit:files`, `mine`, `stack:*`, `kill-zombies`, `preview:*`.
+Shared Per-session Claude Code test infrastructure для Nuxt-проектов: port-registry, Playwright MCP server, hooks (PreToolUse / PostToolUse / SessionStart / SessionEnd), `commit:files`, `mine`, `stack:*`, `kill-zombies`.
 
-**Не публикуется в npm.** Подключается через git+ssh:
+Public-репо, MIT-лицензия. Не публикуется в npm — подключается напрямую с GitHub:
 
 ```sh
-bun add @mttzzz/nuxt-claude-infra@git+ssh://git@github.com:mttzzz/nuxt-claude-infra.git#v0.1.0
+bun add github:mttzzz/nuxt-claude-infra#v0.2.1
+# или
+bun add git+https://github.com/mttzzz/nuxt-claude-infra.git#v0.2.1
 ```
 
 ## Архитектура
