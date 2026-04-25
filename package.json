@@ -1,0 +1,38 @@
+{
+  "name": "@mttzzz/nuxt-claude-infra",
+  "version": "0.0.1",
+  "type": "module",
+  "description": "Per-session Claude Code test infra (port-registry, Playwright MCP server, hooks, commit-files) shared between Nuxt projects",
+  "license": "UNLICENSED",
+  "private": true,
+  "repository": {
+    "type": "git",
+    "url": "git+ssh://git@github.com:mttzzz/nuxt-claude-infra.git"
+  },
+  "main": "./src/index.ts",
+  "types": "./src/index.ts",
+  "exports": {
+    ".": "./src/index.ts",
+    "./config": "./src/config.ts",
+    "./hooks/*": "./src/hooks/*.ts",
+    "./cli/*": "./src/cli/*.ts",
+    "./lib/*": "./src/lib/*.ts"
+  },
+  "scripts": {
+    "test": "bun test",
+    "typecheck": "tsc --noEmit"
+  },
+  "peerDependencies": {
+    "zod": "^4.0.0"
+  },
+  "devDependencies": {
+    "@types/bun": "latest",
+    "typescript": "^5.6.0",
+    "zod": "^4.0.0"
+  },
+  "files": [
+    "src/",
+    "README.md",
+    "LICENSE"
+  ]
+}
