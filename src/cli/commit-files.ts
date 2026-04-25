@@ -1,3 +1,4 @@
+#!/usr/bin/env bun
 // bun commit:files "<message>" <file1> <file2> ...
 //
 // Коммитит явно указанный список файлов. Не зависит от touched.txt и sessionId —

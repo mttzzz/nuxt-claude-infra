@@ -1,3 +1,4 @@
+#!/usr/bin/env bun
 // bun stack:prune — удаляет per-session стеки, все pid'ы которых мёртвые (или отсутствуют).
 // Escape-hatch после kill -9 Claude-процесса, когда SessionEnd hook не успел отработать.
 // Читает project config из .claude-infra.json в process.cwd().

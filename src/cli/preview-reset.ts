@@ -1,3 +1,4 @@
+#!/usr/bin/env bun
 // bun preview:reset — вернуть исходную ветку и восстановить dev-БД из последнего dump.
 import { spawnSync } from 'node:child_process'
 import { existsSync, readFileSync } from 'node:fs'

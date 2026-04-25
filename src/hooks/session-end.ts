@@ -1,3 +1,4 @@
+#!/usr/bin/env bun
 // SessionEnd hook: teardown per-session test-стека + cleanup touched-list.
 // Читает project config из .claude-infra.json в process.cwd().
 import { spawnSync } from 'node:child_process'

@@ -1,3 +1,4 @@
+#!/usr/bin/env bun
 // bun mine — показать файлы, которые текущая Claude-сессия правила.
 //
 // Источник истины: `.claude/sessions/<sessionId>/touched.txt` (обновляется PostToolUse hook).

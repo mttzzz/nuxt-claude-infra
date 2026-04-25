@@ -1,3 +1,4 @@
+#!/usr/bin/env bun
 // SessionStart hook (I/O wrapper).
 // Записывает sessionId в .claude/sessions/by-harness/<harnessPid>.json,
 // чтобы bun-команды могли подхватить sessionId, когда harness не пробрасывает

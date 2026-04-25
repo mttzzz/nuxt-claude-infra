@@ -1,3 +1,4 @@
+#!/usr/bin/env bun
 // bun stack:kill <sessionId> — принудительный teardown чужой (обычно крэшнутой) сессии.
 // Убивает pids (даже живые), гасит docker-project, удаляет .claude/sessions/<id>/.
 // Читает project config из .claude-infra.json в process.cwd().

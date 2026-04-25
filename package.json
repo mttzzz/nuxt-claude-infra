@@ -1,6 +1,6 @@
 {
   "name": "@mttzzz/nuxt-claude-infra",
-  "version": "0.0.1",
+  "version": "0.1.0",
   "type": "module",
   "description": "Per-session Claude Code test infra (port-registry, Playwright MCP server, hooks, commit-files) shared between Nuxt projects",
   "license": "UNLICENSED",
@@ -17,6 +17,22 @@
     "./hooks/*": "./src/hooks/*.ts",
     "./cli/*": "./src/cli/*.ts",
     "./lib/*": "./src/lib/*.ts"
+  },
+  "bin": {
+    "nci-mcp-url": "./src/cli/mcp-url.ts",
+    "nci-mcp-server": "./src/cli/mcp-server.ts",
+    "nci-mine": "./src/cli/mine.ts",
+    "nci-commit-files": "./src/cli/commit-files.ts",
+    "nci-stack-ls": "./src/cli/stack-ls.ts",
+    "nci-stack-kill": "./src/cli/stack-kill.ts",
+    "nci-stack-prune": "./src/cli/stack-prune.ts",
+    "nci-kill-zombies": "./src/cli/kill-zombies.ts",
+    "nci-preview-branch": "./src/cli/preview.ts",
+    "nci-preview-reset": "./src/cli/preview-reset.ts",
+    "nci-hook-session-start": "./src/hooks/session-start.ts",
+    "nci-hook-session-end": "./src/hooks/session-end.ts",
+    "nci-hook-pre-tool-use": "./src/hooks/pre-tool-use.ts",
+    "nci-hook-post-tool-use": "./src/hooks/post-tool-use.ts"
   },
   "scripts": {
     "test": "bun test",

@@ -1,3 +1,4 @@
+#!/usr/bin/env bun
 // bun mcp:server — Nuxt на per-session порту с dev-БД для Playwright MCP и ручной отладки.
 //
 // Порт выделяется через allocateSessionPorts(CLAUDE_SESSION_ID) → .claude/sessions/<id>/ports.json.

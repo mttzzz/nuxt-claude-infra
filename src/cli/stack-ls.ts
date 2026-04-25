@@ -1,3 +1,4 @@
+#!/usr/bin/env bun
 // bun stack:ls — показать все per-session test-стеки.
 import { listAllSessions } from '../lib/ports'
 

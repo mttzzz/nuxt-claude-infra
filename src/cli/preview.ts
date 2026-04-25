@@ -1,3 +1,4 @@
+#!/usr/bin/env bun
 import { spawnSync } from 'node:child_process'
 // bun preview:branch <branch> — переключить рабочий worktree на указанную ветку
 // с предварительным mysqldump dev-БД и `bunx prisma migrate deploy`. Dev-сервер

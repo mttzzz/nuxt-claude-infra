@@ -1,3 +1,4 @@
+#!/usr/bin/env bun
 // PostToolUse hook: записывает touched-файлы текущей сессии после Write/Edit/MultiEdit/NotebookEdit.
 // Ничего не блокирует (exit 0). Hook выхлоп для Claude не используется — stdout пустой.
 import { readHookInput, silentExit } from '../lib/claude-input'
