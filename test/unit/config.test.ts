@@ -50,7 +50,6 @@ describe('resolveProjectConfig', () => {
     const config = resolveProjectConfig(undefined, '/projects/ai.pushka.biz')
     expect(config.dockerProjectPrefix).toBe('ai-pushka-test')
     expect(config.testDbName).toBe('ai_pushka_test')
-    expect(config.mcpMysqlToolsPrefix).toBeUndefined()
     expect(config.ports.mcp).toEqual([3100, 3199])
     expect(config.paths.dockerCompose).toBe('docker-compose.test.yml')
     expect(config.killZombiesPatterns.length).toBeGreaterThan(0)
@@ -61,11 +60,6 @@ describe('resolveProjectConfig', () => {
     expect(config.dockerProjectPrefix).toBe('custom-prefix')
     // testDbName всё ещё convention
     expect(config.testDbName).toBe('ai_pushka_test')
-  })
-
-  it('mcpMysqlToolsPrefix передаётся как есть (нет convention)', () => {
-    const config = resolveProjectConfig({ mcpMysqlToolsPrefix: 'mcp__ai__' }, '/projects/ai.pushka.biz')
-    expect(config.mcpMysqlToolsPrefix).toBe('mcp__ai__')
   })
 })
 
@@ -98,10 +92,11 @@ describe('loadProjectConfig', () => {
     const dir = mkdtempSync(join(tmpdir(), 'nci-config-'))
     try {
       const path = join(dir, '.claude-infra.json')
-      writeFileSync(path, JSON.stringify({ mcpMysqlToolsPrefix: 'mcp__custom__' }), 'utf8')
+      writeFileSync(path, JSON.stringify({ dockerProjectPrefix: 'custom-prefix' }), 'utf8')
       const config = await loadProjectConfig(path, '/projects/ai.pushka.biz')
-      expect(config.mcpMysqlToolsPrefix).toBe('mcp__custom__')
-      expect(config.dockerProjectPrefix).toBe('ai-pushka-test')
+      expect(config.dockerProjectPrefix).toBe('custom-prefix')
+      // testDbName всё ещё из convention
+      expect(config.testDbName).toBe('ai_pushka_test')
     } finally {
       rmSync(dir, { recursive: true, force: true })
     }

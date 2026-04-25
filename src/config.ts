@@ -20,7 +20,6 @@ import { z } from 'zod'
 export const ProjectConfigInputSchema = z.object({
   dockerProjectPrefix: z.string().min(1).optional(),
   testDbName: z.string().min(1).optional(),
-  mcpMysqlToolsPrefix: z.string().optional(),
   ports: z
     .object({
       mcp: z.tuple([z.number(), z.number()]),
@@ -48,7 +47,6 @@ export type ProjectConfigInput = z.infer<typeof ProjectConfigInputSchema>
 export interface ProjectConfig {
   dockerProjectPrefix: string
   testDbName: string
-  mcpMysqlToolsPrefix?: string
   ports: {
     mcp: [number, number]
     test: [number, number]
@@ -126,7 +124,6 @@ export function resolveProjectConfig(input: ProjectConfigInput | undefined, cwd:
   return {
     dockerProjectPrefix: input?.dockerProjectPrefix ?? deriveDockerProjectPrefix(cwd),
     testDbName: input?.testDbName ?? deriveTestDbName(cwd),
-    mcpMysqlToolsPrefix: input?.mcpMysqlToolsPrefix,
     ports: input?.ports ?? DEFAULT_PORTS,
     paths: input?.paths ?? DEFAULT_PATHS,
     killZombiesPatterns: input?.killZombiesPatterns ?? DEFAULT_KILL_ZOMBIES_PATTERNS,

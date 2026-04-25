@@ -1,31 +1,22 @@
 #!/usr/bin/env bun
 // PreToolUse hook: minimal guards.
 //
-// Модель: сессии НЕ разделены на writer/reader. Каждая сессия пишет свободно в одну
-// рабочую копию, но коммитит только свои touched-файлы через `bun commit:mine`.
+// Защита: блокировать DROP/TRUNCATE на dev-БД через MCP MySQL.
+// Обычный SELECT/INSERT/UPDATE/DELETE пропускаем — dev-БД легко восстанавливается из дампа,
+// но полное удаление таблиц — это аккуратно.
 //
-// Этот hook оставлен только для одной защиты: не допустить случайный DROP/TRUNCATE
-// на dev-БД через MCP MySQL. Обычный SELECT/INSERT/UPDATE/DELETE пропускаем —
-// dev-БД легко восстанавливается из дампа, но полное удаление таблиц — это аккуратно.
-//
-// Имя MCP-инструмента и query-key читается из .claude-infra.json (mcpMysqlToolsPrefix).
-import { loadProjectConfig } from '../config'
+// Hook не нуждается в .claude-infra.json: блокировка срабатывает на ЛЮБОЙ MCP-инструмент,
+// который match'ит шаблон `mcp__<anything>__<anything>_sql_query`. Это покрывает все
+// типичные MCP-конфиги MySQL независимо от TOOL_PREFIX.
 import { denyPreToolUse, readHookInput, silentExit } from '../lib/claude-input'
-
-const config = await loadProjectConfig('.claude-infra.json')
-
-// MCP MySQL tools обычно называются `<prefix><projectId>_sql_query`.
-// Точный query-tool name указан в проекте — для ai это `mcp__ai__ai_sql_query`.
-// Извлекаем суффикс `_sql_query` после префикса; если префикса нет, hook ничего не делает.
-const sqlToolPrefix = config.mcpMysqlToolsPrefix
-if (!sqlToolPrefix) {
-  silentExit()
-}
 
 const input = readHookInput()
 const toolName = input.tool_name ?? ''
 
-if (toolName.startsWith(sqlToolPrefix ?? '') && toolName.endsWith('_sql_query')) {
+// Универсальный matcher: mcp__<prefix>__<...>_sql_query
+const SQL_TOOL_PATTERN = /^mcp__[a-z0-9_]+__.*_sql_query$/i
+
+if (SQL_TOOL_PATTERN.test(toolName)) {
   const sql = String((input.tool_input as { sql?: unknown } | undefined)?.sql ?? '')
   const stripped = sql
     .replace(/\/\*[\s\S]*?\*\//g, '')
