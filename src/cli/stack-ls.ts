@@ -1,6 +1,6 @@
-#!/usr/bin/env bun
+#!/usr/bin/env node
 // bun stack:ls — показать все per-session test-стеки.
-import { listAllSessions } from '../lib/ports'
+import { listAllSessions } from '../lib/ports.js'
 
 const sessions = listAllSessions()
 

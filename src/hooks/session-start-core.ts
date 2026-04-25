@@ -4,8 +4,8 @@
 import { mkdirSync } from 'node:fs'
 import { join } from 'node:path'
 
-import { findHarnessPid, type FindHarnessPidDeps } from '../lib/harness-pid'
-import { pruneStaleHarnessFiles, SESSIONS_DIR, writeSessionByHarness } from '../lib/ports'
+import { findHarnessPid, type FindHarnessPidDeps } from '../lib/harness-pid.js'
+import { pruneStaleHarnessFiles, SESSIONS_DIR, writeSessionByHarness } from '../lib/ports.js'
 
 export interface SessionStartDeps {
   env: Record<string, string | undefined>

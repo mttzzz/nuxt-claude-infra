@@ -1,4 +1,4 @@
-#!/usr/bin/env bun
+#!/usr/bin/env node
 // bun mine — показать файлы, которые текущая Claude-сессия правила.
 //
 // Источник истины: `.claude/sessions/<sessionId>/touched.txt` (обновляется PostToolUse hook).
@@ -6,8 +6,8 @@
 import { readdirSync, statSync } from 'node:fs'
 import { join } from 'node:path'
 
-import { resolveSessionId as resolveSessionIdFromPointer } from '../lib/ports'
-import { DEFAULT_SESSIONS_DIR, readTouched } from '../lib/touched'
+import { resolveSessionId as resolveSessionIdFromPointer } from '../lib/ports.js'
+import { DEFAULT_SESSIONS_DIR, readTouched } from '../lib/touched.js'
 
 const sessionId = resolveSessionId()
 if (!sessionId) {

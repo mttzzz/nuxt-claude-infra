@@ -2,8 +2,8 @@ import { existsSync, mkdirSync, readdirSync, readFileSync, rmSync, statSync, unl
 import { createServer } from 'node:net'
 import { dirname, join } from 'node:path'
 
-import { findHarnessPid } from './harness-pid'
-import { listProcs } from './proc'
+import { findHarnessPid } from './harness-pid.js'
+import { listProcs } from './proc.js'
 
 // Per-session аллокация портов для изолированной тестовой инфры.
 // Каждая Claude-сессия получает ports.json в .claude/sessions/<sessionId>/,

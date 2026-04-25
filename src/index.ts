@@ -7,7 +7,7 @@
  */
 
 // Config schema
-export { ProjectConfigSchema, loadProjectConfig, type ProjectConfig } from './config'
+export { ProjectConfigSchema, loadProjectConfig, type ProjectConfig } from './config.js'
 
 // Lib — pure helpers
 export {
@@ -28,27 +28,27 @@ export {
   readSessionByHarness,
   removeSessionByHarness,
   pruneStaleHarnessFiles,
-} from './lib/ports'
+} from './lib/ports.js'
 
-export { findHarnessPid, type FindHarnessPidDeps } from './lib/harness-pid'
+export { findHarnessPid, type FindHarnessPidDeps } from './lib/harness-pid.js'
 
-export { listProcs, killTree, type ProcInfo } from './lib/proc'
+export { listProcs, killTree, type ProcInfo } from './lib/proc.js'
 
-export { readHookInput, denyPreToolUse, silentExit } from './lib/claude-input'
+export { readHookInput, denyPreToolUse, silentExit } from './lib/claude-input.js'
 
-export { commitFiles, type CommitFilesArgs, type CommitFilesResult, type Runner } from './lib/commit-files-core'
+export { commitFiles, type CommitFilesArgs, type CommitFilesResult, type Runner } from './lib/commit-files-core.js'
 
-export { isMutatingBash } from './lib/is-mutating-bash'
+export { isMutatingBash } from './lib/is-mutating-bash.js'
 
-export { currentBranch } from './lib/git-branch'
+export { currentBranch } from './lib/git-branch.js'
 
-export { readDevDbConfig, type DevDbConfig, type ReadDevDbConfigOptions } from './lib/dev-env'
+export { readDevDbConfig, type DevDbConfig, type ReadDevDbConfigOptions } from './lib/dev-env.js'
 
-export { addTouched, readTouched, clearTouched, DEFAULT_SESSIONS_DIR } from './lib/touched'
+export { addTouched, readTouched, clearTouched, DEFAULT_SESSIONS_DIR } from './lib/touched.js'
 
 // Hook entry-points (для обёрток в проектном scripts/claude/hooks/)
-export { runSessionStart } from './hooks/session-start-core'
-export { runSessionEndCleanup, type SessionEndDeps } from './hooks/session-end-core'
+export { runSessionStart } from './hooks/session-start-core.js'
+export { runSessionEndCleanup, type SessionEndDeps } from './hooks/session-end-core.js'
 
 // CLI helpers
-export { buildMcpServerEnv, type McpServerEnvOptions } from './cli/mcp-server'
+export { buildMcpServerEnv, type McpServerEnvOptions } from './cli/mcp-server.js'

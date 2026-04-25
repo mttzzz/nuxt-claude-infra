@@ -1,4 +1,4 @@
-import { existsSync } from 'node:fs'
+import { existsSync, readFileSync } from 'node:fs'
 import { basename } from 'node:path'
 import { z } from 'zod'
 
@@ -141,7 +141,7 @@ export async function loadProjectConfig(path: string = '.claude-infra.json', cwd
   if (!existsSync(path)) {
     return resolveProjectConfig(undefined, cwd)
   }
-  const raw = await Bun.file(path).json()
+  const raw = JSON.parse(readFileSync(path, 'utf8')) as unknown
   const input = ProjectConfigInputSchema.parse(raw)
   return resolveProjectConfig(input, cwd)
 }

@@ -1,4 +1,4 @@
-#!/usr/bin/env bun
+#!/usr/bin/env node
 // bun kill:zombies — прибить всех node/bun-зомби от нашей инфры.
 //
 // Известные источники:
@@ -16,7 +16,10 @@
 //   - Win: исторически "matches → kill" (родитель в выборке wmic не используется).
 //   - Unix (mac/linux): дополнительно требуем ppid=1 (orphan), чтобы не задеть пользовательский
 //     bun dev 3001 и его tinypool/nuxi-дочки (у них parent живой).
-import { killTree, listProcs, type ProcInfo } from '../lib/proc'
+import { setTimeout as delay } from 'node:timers/promises'
+
+import { isMainModule } from '../lib/is-main.js'
+import { killTree, listProcs, type ProcInfo } from '../lib/proc.js'
 
 const IS_WINDOWS = process.platform === 'win32'
 
@@ -36,14 +39,14 @@ export function isZombie(p: ProcInfo): boolean {
   return p.ppid === 1
 }
 
-if (import.meta.main) {
+if (isMainModule(import.meta)) {
   /*
    * Retry-loop: vitest exit → workers ещё в stdout flush / shutdown,
    * появляются с задержкой ~200-500ms. 3 попытки покрывают race.
    */
   let totalKilled = 0
   for (let attempt = 0; attempt < 3; attempt++) {
-    if (attempt > 0) await Bun.sleep(500)
+    if (attempt > 0) await delay(500)
     const zombies = listProcs().filter(isZombie)
     if (zombies.length === 0) continue
     for (const z of zombies) {

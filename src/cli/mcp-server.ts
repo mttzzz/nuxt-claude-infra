@@ -1,14 +1,16 @@
-#!/usr/bin/env bun
+#!/usr/bin/env node
 // bun mcp:server — Nuxt на per-session порту с dev-БД для Playwright MCP и ручной отладки.
 //
 // Порт выделяется через allocateSessionPorts(CLAUDE_SESSION_ID) → .claude/sessions/<id>/ports.json.
 // БД: проектная dev-БД (localhost:3306, имя из NUXT_DB_NAME / .env проекта) — shared между всеми сессиями.
 // API-ключи из .env (реальные, сервер бьёт в живой LLM).
 // Идемпотентность: если на своём порту уже живой Nuxt — exit 0 без спавна.
+import { spawn } from 'node:child_process'
 import { existsSync, readFileSync, writeFileSync } from 'node:fs'
 import { join } from 'node:path'
 
-import { allocateSessionPorts, resolveSessionId, SESSIONS_DIR } from '../lib/ports'
+import { isMainModule } from '../lib/is-main.js'
+import { allocateSessionPorts, resolveSessionId, SESSIONS_DIR } from '../lib/ports.js'
 
 const DEV_DB_KEYS = [
   'DATABASE_URL',
@@ -75,7 +77,7 @@ async function isHealthy(port: string): Promise<boolean> {
   }
 }
 
-if (import.meta.main) {
+if (isMainModule(import.meta)) {
   const sessionId = resolveSessionId()
   if (!sessionId) {
     process.stderr.write(
@@ -96,11 +98,12 @@ if (import.meta.main) {
   const env = buildMcpServerEnv({ port })
   process.stdout.write(`[mcp:server] Стартую Nuxt на :${port} (sessionId=${sessionId}, dev-БД).\n`)
 
-  const proc = Bun.spawn(['bunx', 'nuxi', 'dev', '--host', '127.0.0.1'], {
+  // shell: true чтобы Node на Windows нашёл `bunx.cmd` / `bunx.exe` через PATH;
+  // без него child_process.spawn не разрешает .cmd-shim'ы.
+  const proc = spawn('bunx', ['nuxi', 'dev', '--host', '127.0.0.1'], {
     env: { ...process.env, ...env, NO_COLOR: '1' },
-    stdout: 'inherit',
-    stderr: 'inherit',
-    stdin: 'inherit',
+    stdio: 'inherit',
+    shell: true,
   })
 
   // Записываем pid — SessionEnd hook его прибьёт.
@@ -109,6 +112,13 @@ if (import.meta.main) {
     writeFileSync(pidFile, String(proc.pid), 'utf8')
   }
 
-  const exitCode = await proc.exited
+  const exitCode: number = await new Promise((resolve) => {
+    proc.on('exit', (code, signal) => {
+      // signal без code → 128 + signal-number или 1 для SIGTERM.
+      if (code !== null) resolve(code)
+      else resolve(signal === 'SIGTERM' ? 0 : 1)
+    })
+    proc.on('error', () => resolve(1))
+  })
   process.exit(exitCode)
 }

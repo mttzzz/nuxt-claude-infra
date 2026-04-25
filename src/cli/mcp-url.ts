@@ -1,8 +1,8 @@
-#!/usr/bin/env bun
+#!/usr/bin/env node
 // bun mcp:url — печатает URL mcp-server'а для текущей сессии.
 // Если ports.json ещё не аллоцирован — аллоцирует (берёт первый свободный порт из диапазона).
 // Выход: 0 при успехе, 1 если sessionId не определяется (ни env, ни pointer-файл).
-import { allocateSessionPorts, resolveSessionId } from '../lib/ports'
+import { allocateSessionPorts, resolveSessionId } from '../lib/ports.js'
 
 const sessionId = resolveSessionId()
 if (!sessionId) {

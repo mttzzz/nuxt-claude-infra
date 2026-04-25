@@ -1,4 +1,4 @@
-#!/usr/bin/env bun
+#!/usr/bin/env node
 // bun commit:files "<message>" <file1> <file2> ...
 //
 // Коммитит явно указанный список файлов. Не зависит от touched.txt и sessionId —
@@ -10,7 +10,7 @@
 //
 // Пример:
 //   bun commit:files "feat(contracts): новая схема" shared/contracts/foo.ts test/unit/foo.test.ts
-import { commitFiles } from '../lib/commit-files-core'
+import { commitFiles } from '../lib/commit-files-core.js'
 
 const [message, ...files] = process.argv.slice(2)
 

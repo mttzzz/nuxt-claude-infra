@@ -1,12 +1,12 @@
-#!/usr/bin/env bun
+#!/usr/bin/env node
 // bun stack:kill <sessionId> — принудительный teardown чужой (обычно крэшнутой) сессии.
 // Убивает pids (даже живые), гасит docker-project, удаляет .claude/sessions/<id>/.
 // Читает project config из .claude-infra.json в process.cwd().
 import { spawnSync } from 'node:child_process'
 
-import { loadProjectConfig } from '../config'
-import { runSessionEndCleanup } from '../hooks/session-end-core'
-import { killTree } from '../lib/proc'
+import { loadProjectConfig } from '../config.js'
+import { runSessionEndCleanup } from '../hooks/session-end-core.js'
+import { killTree } from '../lib/proc.js'
 
 const sessionId = process.argv[2]
 if (!sessionId) {

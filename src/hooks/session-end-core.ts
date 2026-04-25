@@ -2,7 +2,7 @@
 import { existsSync, readdirSync, readFileSync, rmSync } from 'node:fs'
 import { join } from 'node:path'
 
-import { getSessionPorts, SESSIONS_BY_HARNESS_DIR, SESSIONS_DIR, slugSessionId } from '../lib/ports'
+import { getSessionPorts, SESSIONS_BY_HARNESS_DIR, SESSIONS_DIR, slugSessionId } from '../lib/ports.js'
 
 export interface SessionEndDeps {
   dockerDown: (projectName: string) => void

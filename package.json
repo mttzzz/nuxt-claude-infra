@@ -1,6 +1,6 @@
 {
   "name": "@mttzzz/nuxt-claude-infra",
-  "version": "0.2.2",
+  "version": "0.3.0",
   "type": "module",
   "description": "Per-session Claude Code test infra (port-registry, Playwright MCP server, hooks, commit-files) shared between Nuxt projects",
   "license": "MIT",
@@ -9,43 +9,62 @@
     "type": "git",
     "url": "git+https://github.com/mttzzz/nuxt-claude-infra.git"
   },
-  "main": "./src/index.ts",
-  "types": "./src/index.ts",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
   "exports": {
-    ".": "./src/index.ts",
-    "./config": "./src/config.ts",
-    "./hooks/*": "./src/hooks/*.ts",
-    "./cli/*": "./src/cli/*.ts",
-    "./lib/*": "./src/lib/*.ts"
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    },
+    "./config": {
+      "types": "./dist/config.d.ts",
+      "default": "./dist/config.js"
+    },
+    "./hooks/*": {
+      "types": "./dist/hooks/*.d.ts",
+      "default": "./dist/hooks/*.js"
+    },
+    "./cli/*": {
+      "types": "./dist/cli/*.d.ts",
+      "default": "./dist/cli/*.js"
+    },
+    "./lib/*": {
+      "types": "./dist/lib/*.d.ts",
+      "default": "./dist/lib/*.js"
+    }
   },
   "bin": {
-    "nci-mcp-url": "./src/cli/mcp-url.ts",
-    "nci-mcp-server": "./src/cli/mcp-server.ts",
-    "nci-mine": "./src/cli/mine.ts",
-    "nci-commit-files": "./src/cli/commit-files.ts",
-    "nci-stack-ls": "./src/cli/stack-ls.ts",
-    "nci-stack-kill": "./src/cli/stack-kill.ts",
-    "nci-stack-prune": "./src/cli/stack-prune.ts",
-    "nci-kill-zombies": "./src/cli/kill-zombies.ts",
-    "nci-hook-session-start": "./src/hooks/session-start.ts",
-    "nci-hook-session-end": "./src/hooks/session-end.ts",
-    "nci-hook-pre-tool-use": "./src/hooks/pre-tool-use.ts",
-    "nci-hook-post-tool-use": "./src/hooks/post-tool-use.ts"
+    "nci-mcp-url": "./dist/cli/mcp-url.js",
+    "nci-mcp-server": "./dist/cli/mcp-server.js",
+    "nci-mine": "./dist/cli/mine.js",
+    "nci-commit-files": "./dist/cli/commit-files.js",
+    "nci-stack-ls": "./dist/cli/stack-ls.js",
+    "nci-stack-kill": "./dist/cli/stack-kill.js",
+    "nci-stack-prune": "./dist/cli/stack-prune.js",
+    "nci-kill-zombies": "./dist/cli/kill-zombies.js",
+    "nci-hook-session-start": "./dist/hooks/session-start.js",
+    "nci-hook-session-end": "./dist/hooks/session-end.js",
+    "nci-hook-pre-tool-use": "./dist/hooks/pre-tool-use.js",
+    "nci-hook-post-tool-use": "./dist/hooks/post-tool-use.js"
   },
   "scripts": {
     "test": "bun test",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "build": "tsc -p tsconfig.build.json",
+    "prepack": "npm run build",
+    "prepare": "npm run build"
   },
   "peerDependencies": {
     "zod": "^4.0.0"
   },
   "devDependencies": {
     "@types/bun": "latest",
+    "@types/node": "^22.0.0",
     "typescript": "^5.6.0",
     "zod": "^4.0.0"
   },
   "files": [
-    "src/",
+    "dist/",
     "README.md",
     "LICENSE"
   ]

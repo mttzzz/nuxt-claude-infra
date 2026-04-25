@@ -1,8 +1,8 @@
-#!/usr/bin/env bun
+#!/usr/bin/env node
 // PostToolUse hook: записывает touched-файлы текущей сессии после Write/Edit/MultiEdit/NotebookEdit.
 // Ничего не блокирует (exit 0). Hook выхлоп для Claude не используется — stdout пустой.
-import { readHookInput, silentExit } from '../lib/claude-input'
-import { addTouched, DEFAULT_SESSIONS_DIR } from '../lib/touched'
+import { readHookInput, silentExit } from '../lib/claude-input.js'
+import { addTouched, DEFAULT_SESSIONS_DIR } from '../lib/touched.js'
 
 const input = readHookInput()
 const sessionId = input.session_id || 'unknown'
