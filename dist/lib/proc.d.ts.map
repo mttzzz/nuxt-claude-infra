@@ -1,0 +1,1 @@
+{"version":3,"file":"proc.d.ts","sourceRoot":"","sources":["../../src/lib/proc.ts"],"names":[],"mappings":"AASA,MAAM,WAAW,QAAQ;IACvB,GAAG,EAAE,MAAM,CAAA;IACX,IAAI,EAAE,MAAM,CAAA;IACZ,GAAG,EAAE,MAAM,CAAA;CACZ;AAID,wBAAgB,SAAS,IAAI,QAAQ,EAAE,CAEtC;AAyCD,wBAAgB,QAAQ,CAAC,GAAG,EAAE,MAAM,GAAG,OAAO,CAmB7C"}

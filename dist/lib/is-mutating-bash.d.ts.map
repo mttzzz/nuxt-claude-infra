@@ -1,0 +1,1 @@
+{"version":3,"file":"is-mutating-bash.d.ts","sourceRoot":"","sources":["../../src/lib/is-mutating-bash.ts"],"names":[],"mappings":"AA+FA,MAAM,WAAW,eAAe;IAC9B,QAAQ,EAAE,OAAO,CAAA;IACjB,MAAM,EAAE,MAAM,GAAG,IAAI,CAAA;CACtB;AAED,wBAAgB,cAAc,CAAC,OAAO,EAAE,MAAM,GAAG,eAAe,CAY/D"}
