@@ -44,15 +44,6 @@ export { currentBranch } from './lib/git-branch'
 
 export { readDevDbConfig, type DevDbConfig, type ReadDevDbConfigOptions } from './lib/dev-env'
 
-export {
-  readPreviewState,
-  writePreviewState,
-  clearPreviewState,
-  DEFAULT_STATE_PATH,
-  DEFAULT_BACKUPS_DIR,
-  type PreviewState,
-} from './lib/preview-state'
-
 export { addTouched, readTouched, clearTouched, DEFAULT_SESSIONS_DIR } from './lib/touched'
 
 // Hook entry-points (для обёрток в проектном scripts/claude/hooks/)

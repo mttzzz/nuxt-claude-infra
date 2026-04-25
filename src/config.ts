@@ -42,14 +42,11 @@ export const ProjectConfigSchema = z.object({
       sessionsDir: z.string(),
       /* Путь для артефактов Playwright MCP (скриншоты, snapshots). */
       playwrightArtifactsDir: z.string(),
-      /* Backup-директория для preview:branch (mysqldump). */
-      previewBackupsDir: z.string(),
     })
     .default({
       dockerCompose: 'docker-compose.test.yml',
       sessionsDir: '.claude/sessions',
       playwrightArtifactsDir: '.playwright-mcp',
-      previewBackupsDir: '.preview-backups',
     }),
 
   /*
@@ -59,12 +56,6 @@ export const ProjectConfigSchema = z.object({
   killZombiesPatterns: z
     .array(z.string())
     .default(['nuxi.*_dev', 'tinypool', '@playwright/test.*test-server', 'test-server\\.ts']),
-
-  preview: z
-    .object({
-      enabled: z.boolean(),
-    })
-    .default({ enabled: true }),
 })
 
 export type ProjectConfig = z.infer<typeof ProjectConfigSchema>

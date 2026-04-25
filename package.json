@@ -27,8 +27,6 @@
     "nci-stack-kill": "./src/cli/stack-kill.ts",
     "nci-stack-prune": "./src/cli/stack-prune.ts",
     "nci-kill-zombies": "./src/cli/kill-zombies.ts",
-    "nci-preview-branch": "./src/cli/preview.ts",
-    "nci-preview-reset": "./src/cli/preview-reset.ts",
     "nci-hook-session-start": "./src/hooks/session-start.ts",
     "nci-hook-session-end": "./src/hooks/session-end.ts",
     "nci-hook-pre-tool-use": "./src/hooks/pre-tool-use.ts",
