@@ -63,8 +63,11 @@ if (!existsSync(SESSIONS_DIR)) {
     process.stdout.write('Нет .claude/sessions — пусто.\n');
     process.exit(0);
 }
-/* 3. Итерируем все session-dirs (кроме `by-harness`) и собираем stale. */
-const allSessions = readdirSync(SESSIONS_DIR).filter((name) => name !== 'by-harness');
+/* 3. Итерируем все session-dirs (кроме `by-harness`) и собираем stale.
+ *    Фильтр: только директории, не dotfiles (`.gitkeep` / `.current-session`-подобные не трогаем). */
+const allSessions = readdirSync(SESSIONS_DIR, { withFileTypes: true })
+    .filter((entry) => entry.isDirectory() && entry.name !== 'by-harness' && !entry.name.startsWith('.'))
+    .map((entry) => entry.name);
 const stale = allSessions.filter((sid) => !aliveSessionIds.has(sid));
 if (stale.length === 0) {
     process.stdout.write('Нет stale session-dirs.\n');
