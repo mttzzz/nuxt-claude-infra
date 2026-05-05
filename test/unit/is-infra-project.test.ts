@@ -57,6 +57,20 @@ describe('isInfraProject', () => {
     }
   })
 
+  it('true когда package.json имеет пакет в peerDependencies', () => {
+    const dir = makeDir()
+    try {
+      writeFileSync(
+        join(dir, 'package.json'),
+        JSON.stringify({ peerDependencies: { '@mttzzz/nuxt-claude-infra': '>=0.4' } }),
+        'utf8',
+      )
+      expect(isInfraProject(dir)).toBe(true)
+    } finally {
+      rmSync(dir, { recursive: true, force: true })
+    }
+  })
+
   it('false когда package.json есть, но без нашего пакета', () => {
     const dir = makeDir()
     try {
