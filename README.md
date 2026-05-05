@@ -5,9 +5,9 @@ Shared Per-session Claude Code test infrastructure для Nuxt-проектов:
 Public-репо, MIT-лицензия. Не публикуется в npm — подключается напрямую с GitHub:
 
 ```sh
-bun add github:mttzzz/nuxt-claude-infra#v0.2.1
+bun add github:mttzzz/nuxt-claude-infra#v0.4.0
 # или
-bun add git+https://github.com/mttzzz/nuxt-claude-infra.git#v0.2.1
+bun add git+https://github.com/mttzzz/nuxt-claude-infra.git#v0.4.0
 ```
 
 ## Архитектура
@@ -131,4 +131,5 @@ bun install -g github:mttzzz/nuxt-claude-infra#v0.4.0
 
 ## Статус
 
-`v0.0.1` — pre-release. Скелет + базовые `lib/` функции. Public API нестабилен, готовится к `v0.1.0` (extract завершён, мигрированы ai.pushka.biz и easy2.pushka.biz).
+**v0.4.0** — stable. Generic test-helpers, конфиг-пресеты, docker-compose template вынесены из проектов в пакет.
+Полная миграция трёх проектов (ai.pushka.biz, easy2.pushka.biz, kp.modmb.com) — отдельные планы (`docs/superpowers/plans/`).

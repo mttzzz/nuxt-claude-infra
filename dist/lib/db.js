@@ -1,14 +1,14 @@
 /*
  * Возвращает порт test-Postgres'а текущей сессии.
  * Источники (в порядке приоритета):
- *   1. opts.ports.db (передан явно — например из startTestStack handle)
- *   2. process.env.TEST_POSTGRES_PORT (выставлен docker-compose'ом)
+ *   1. явный аргумент ports.db (например из startTestStack handle)
+ *   2. process.env.TEST_POSTGRES_PORT (выставлен docker-compose'ом или globalSetup'ом)
  *
  * Без обоих — throw (вызывающий должен сначала поднять стек).
  */
-export function resolveTestDbPort(sessionId, opts) {
-    if (opts?.ports?.db)
-        return opts.ports.db;
+export function resolveTestDbPort(ports) {
+    if (ports?.db !== undefined)
+        return ports.db;
     const env = process.env.TEST_POSTGRES_PORT;
     if (env) {
         const port = Number(env);

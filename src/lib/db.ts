@@ -7,24 +7,16 @@ export interface PostgresClient {
   end?: () => Promise<void>
 }
 
-export interface ResolveTestDbPortOpts {
-  sessionId: string | undefined
-  ports: { db: number } | undefined
-}
-
 /*
  * Возвращает порт test-Postgres'а текущей сессии.
  * Источники (в порядке приоритета):
- *   1. opts.ports.db (передан явно — например из startTestStack handle)
- *   2. process.env.TEST_POSTGRES_PORT (выставлен docker-compose'ом)
+ *   1. явный аргумент ports.db (например из startTestStack handle)
+ *   2. process.env.TEST_POSTGRES_PORT (выставлен docker-compose'ом или globalSetup'ом)
  *
  * Без обоих — throw (вызывающий должен сначала поднять стек).
  */
-export function resolveTestDbPort(
-  sessionId?: string,
-  opts?: ResolveTestDbPortOpts,
-): number {
-  if (opts?.ports?.db) return opts.ports.db
+export function resolveTestDbPort(ports?: { db: number }): number {
+  if (ports?.db !== undefined) return ports.db
 
   const env = process.env.TEST_POSTGRES_PORT
   if (env) {

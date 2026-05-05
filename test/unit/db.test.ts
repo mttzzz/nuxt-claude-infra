@@ -3,33 +3,29 @@ import { describe, expect, it, mock } from 'bun:test'
 import { resolveTestDbPort, truncateAllTables, disconnectClient } from '../../src/lib/db'
 
 describe('resolveTestDbPort', () => {
-  it('бросает если sessionId не передан и env не выставлен', () => {
-    const origPort = process.env.TEST_POSTGRES_PORT
+  it('бросает если nothing передан и env не выставлен', () => {
+    const orig = process.env.TEST_POSTGRES_PORT
     delete process.env.TEST_POSTGRES_PORT
     try {
-      expect(() => resolveTestDbPort(undefined, { sessionId: undefined, ports: undefined })).toThrow()
+      expect(() => resolveTestDbPort()).toThrow()
     } finally {
-      if (origPort) process.env.TEST_POSTGRES_PORT = origPort
+      if (orig) process.env.TEST_POSTGRES_PORT = orig
     }
   })
 
-  it('возвращает opts.ports.db если передан явно', () => {
-    expect(resolveTestDbPort(undefined, { sessionId: undefined, ports: { db: 3318 } })).toBe(3318)
+  it('возвращает ports.db если передан явно', () => {
+    expect(resolveTestDbPort({ db: 3318 })).toBe(3318)
   })
 
-  it('читает process.env.TEST_POSTGRES_PORT когда opts.ports не передан', () => {
+  it('читает process.env.TEST_POSTGRES_PORT когда ports не передан', () => {
     const orig = process.env.TEST_POSTGRES_PORT
     process.env.TEST_POSTGRES_PORT = '3325'
     try {
-      expect(resolveTestDbPort(undefined, { sessionId: undefined, ports: undefined })).toBe(3325)
+      expect(resolveTestDbPort()).toBe(3325)
     } finally {
       if (orig === undefined) delete process.env.TEST_POSTGRES_PORT
       else process.env.TEST_POSTGRES_PORT = orig
     }
-  })
-
-  it('берёт port из переданного аллокированного порта', () => {
-    expect(resolveTestDbPort('sess-123', { sessionId: 'sess-123', ports: { db: 3320 } })).toBe(3320)
   })
 })
 
