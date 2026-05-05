@@ -155,7 +155,11 @@ export async function startTestStack(deps: TestStackDeps = {}): Promise<TestStac
   const config = await loadProjectConfig()
   const imageTag = deps.imageTag ?? `${config.dockerProjectPrefix}-server:latest`
 
-  /* Re-use если стек уже поднят */
+  /*
+   * Idempotent re-use по handle file — НЕ проверяем liveness контейнера.
+   * Если предыдущая сессия упала без cleanup, handle file останется и здесь
+   * вернётся stale handle на мёртвый стек. Покрывается smoke в Task 16.
+   */
   const existing = loadHandle(sessionId)
   if (existing) {
     return {
@@ -258,8 +262,9 @@ export function defineTestStack(deps: TestStackDeps = {}): TestStackController {
     },
     async stop() {
       if (handle) {
-        await stopTestStack(handle, deps)
-        handle = null
+        const h = handle
+        handle = null  /* Optimistic null — даже если stopTestStack throws, повторный stop() будет no-op */
+        await stopTestStack(h, deps)
       }
     },
     current() {

@@ -41,6 +41,23 @@ describe('allocateWithRetry', () => {
     expect(freeCalls).toBe(1)
   })
 
+  it('работает с синхронным (void) PortFreer', async () => {
+    let allocCalls = 0, freeCalls = 0, startCalls = 0
+    const allocator: PortAllocator = async () => { allocCalls++; return goodPorts }
+    const starter: ContainerStarter = async () => {
+      startCalls++
+      if (startCalls === 1) throw new Error('Bind for 0.0.0.0:3320 failed: port is already allocated')
+    }
+    /* Sync freer — возвращает void, не Promise */
+    const freer: PortFreer = () => { freeCalls++ }
+
+    const ports = await allocateWithRetry('sess-sync-freer', { allocator, starter, freer, maxAttempts: 3 })
+    expect(ports).toEqual(goodPorts)
+    expect(allocCalls).toBe(2)
+    expect(startCalls).toBe(2)
+    expect(freeCalls).toBe(1)
+  })
+
   it('пробрасывает ошибку, не относящуюся к port-conflict', async () => {
     const allocator: PortAllocator = async () => goodPorts
     const starter: ContainerStarter = async () => { throw new Error('image not found') }
