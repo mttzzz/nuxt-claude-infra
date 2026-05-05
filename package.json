@@ -1,6 +1,6 @@
 {
   "name": "@mttzzz/nuxt-claude-infra",
-  "version": "0.3.2",
+  "version": "0.4.0",
   "type": "module",
   "description": "Per-session Claude Code test infra (port-registry, Playwright MCP server, hooks, commit-files) shared between Nuxt projects",
   "license": "MIT",
@@ -31,7 +31,12 @@
     "./lib/*": {
       "types": "./dist/lib/*.d.ts",
       "default": "./dist/lib/*.js"
-    }
+    },
+    "./configs/*": {
+      "types": "./dist/configs/*.d.ts",
+      "default": "./dist/configs/*.js"
+    },
+    "./templates/*": "./dist/templates/*"
   },
   "bin": {
     "nci-mcp-url": "./dist/cli/mcp-url.js",
@@ -50,7 +55,8 @@
   "scripts": {
     "test": "bun test",
     "typecheck": "tsc --noEmit",
-    "build": "tsc -p tsconfig.build.json",
+    "build": "tsc -p tsconfig.build.json && bun run copy-templates",
+    "copy-templates": "bun run scripts/copy-templates.ts",
     "prepack": "npm run build"
   },
   "peerDependencies": {
