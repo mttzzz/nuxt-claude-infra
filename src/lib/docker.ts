@@ -65,7 +65,11 @@ export interface BuildImageOpts {
   target?: string
   /** Дополнительные --build-arg KEY=VALUE. */
   buildArgs?: Record<string, string>
-  /** cwd для запуска docker build. */
+  /**
+   * cwd для запуска docker build.
+   * Также используется как build context — финальный аргумент `'.'` в `docker build`
+   * резолвится относительно cwd. Если нужен другой context — поставь cwd на нужную директорию.
+   */
   cwd?: string
 }
 
@@ -117,6 +121,9 @@ export function startTestStackContainers(opts: ComposeOpts, runner: SpawnRunner 
 
 /*
  * docker compose -p <name> down -v (volume cleanup).
+ * В отличие от start, env не пробрасывается — `down` не делает port-interpolation,
+ * defaultRunner унаследует process.env через spawnSync. Кастомный SpawnRunner
+ * должен сам обеспечить PATH-наследование если нужно вызвать docker из non-PATH.
  */
 export function stopTestStackContainers(
   opts: Omit<ComposeOpts, 'env'>,
