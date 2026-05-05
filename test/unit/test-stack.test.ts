@@ -3,6 +3,7 @@ import { describe, expect, it } from 'bun:test'
 import {
   allocateWithRetry,
   defineTestStack,
+  isHandleAlive,
   type PortAllocator,
   type ContainerStarter,
   type PortFreer,
@@ -87,5 +88,24 @@ describe('defineTestStack (factory shape)', () => {
     expect(typeof stack.stop).toBe('function')
     expect(typeof stack.current).toBe('function')
     expect(stack.current()).toBeNull()
+  })
+})
+
+describe('isHandleAlive (v0.5.0)', () => {
+  it('false для unreachable host (быстрый refusal)', async () => {
+    /* Порт, на котором гарантированно ничего не слушает. */
+    const result = await isHandleAlive('http://127.0.0.1:1', 2_000)
+    expect(result).toBe(false)
+  })
+
+  it('false при таймауте (host висит, не отвечает)', async () => {
+    /* 192.0.2.x — TEST-NET-1 (RFC 5737), routable но никто не отвечает —
+       fetch висит до AbortController-таймаута. */
+    const start = Date.now()
+    const result = await isHandleAlive('http://192.0.2.1:80', 500)
+    const elapsed = Date.now() - start
+    expect(result).toBe(false)
+    /* Должны уложиться в ~таймаут + небольшой запас, не висеть на 30s default. */
+    expect(elapsed).toBeLessThan(2_000)
   })
 })
