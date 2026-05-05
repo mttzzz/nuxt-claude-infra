@@ -1,5 +1,3 @@
-import type { SessionPorts } from './ports.js'
-
 /*
  * Минимальный интерфейс postgres-js клиента, который нам нужен.
  * Drizzle/postgres-js клиент удовлетворяет этому контракту.

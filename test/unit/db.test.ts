@@ -13,8 +13,19 @@ describe('resolveTestDbPort', () => {
     }
   })
 
-  it('возвращает env TEST_POSTGRES_PORT если задан', () => {
+  it('возвращает opts.ports.db если передан явно', () => {
     expect(resolveTestDbPort(undefined, { sessionId: undefined, ports: { db: 3318 } })).toBe(3318)
+  })
+
+  it('читает process.env.TEST_POSTGRES_PORT когда opts.ports не передан', () => {
+    const orig = process.env.TEST_POSTGRES_PORT
+    process.env.TEST_POSTGRES_PORT = '3325'
+    try {
+      expect(resolveTestDbPort(undefined, { sessionId: undefined, ports: undefined })).toBe(3325)
+    } finally {
+      if (orig === undefined) delete process.env.TEST_POSTGRES_PORT
+      else process.env.TEST_POSTGRES_PORT = orig
+    }
   })
 
   it('берёт port из переданного аллокированного порта', () => {
