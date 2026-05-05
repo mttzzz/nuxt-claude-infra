@@ -34,4 +34,5 @@ export declare function allocateWithRetry(sessionId: string, opts: AllocateWithR
 export declare function startTestStack(deps?: TestStackDeps): Promise<TestStackHandle>;
 export declare function stopTestStack(handleOrSessionId: TestStackHandle | string, deps?: TestStackDeps): Promise<void>;
 export declare function defineTestStack(deps?: TestStackDeps): TestStackController;
+export declare function isHandleAlive(host: string, timeoutMs: number): Promise<boolean>;
 //# sourceMappingURL=test-stack.d.ts.map

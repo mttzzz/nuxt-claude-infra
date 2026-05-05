@@ -131,5 +131,6 @@ bun install -g github:mttzzz/nuxt-claude-infra#v0.4.0
 
 ## Статус
 
-**v0.4.0** — stable. Generic test-helpers, конфиг-пресеты, docker-compose template вынесены из проектов в пакет.
-Полная миграция трёх проектов (ai.pushka.biz, easy2.pushka.biz, kp.modmb.com) — отдельные планы (`docs/superpowers/plans/`).
+**v0.5.0** — stale-handle liveness check в `startTestStack` + публичный `isHandleAlive(host, timeoutMs)` helper. Если предыдущая сессия упала без cleanup и handle file остался — пингуем `/api/health/ready` (3s timeout), на dead host удаляем stale файл и поднимаем стек заново. Фикс для ECONNREFUSED после крашей.
+
+**v0.4.0** — generic test-helpers, конфиг-пресеты (`defineVitestPreset`/`definePlaywrightPreset`), docker-compose template (pgvector/pg18) вынесены из проектов в пакет. Полная миграция трёх проектов (ai.pushka.biz, easy2.pushka.biz, kp.modmb.com) завершена — см. `docs/superpowers/plans/`.

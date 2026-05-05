@@ -89,18 +89,29 @@ export async function startTestStack(deps = {}) {
     const config = await loadProjectConfig();
     const imageTag = deps.imageTag ?? `${config.dockerProjectPrefix}-server:latest`;
     /*
-     * Idempotent re-use по handle file — НЕ проверяем liveness контейнера.
-     * Если предыдущая сессия упала без cleanup, handle file останется и здесь
-     * вернётся stale handle на мёртвый стек. Покрывается smoke в Task 16.
+     * Idempotent re-use по handle file с liveness check (v0.5.0+).
+     * Если предыдущая сессия упала без cleanup, handle file остаётся на диске.
+     * Перед re-use пингуем host — если мёртв, удаляем stale handle и поднимаем
+     * стек заново. Это предотвращает ECONNREFUSED в тестах после крашей.
      */
     const existing = loadHandle(sessionId);
     if (existing) {
-        return {
-            sessionId: existing.sessionId,
-            host: existing.host,
-            ports: existing.ports,
-            composeProjectName: existing.composeProjectName,
-        };
+        const alive = await isHandleAlive(existing.host, 3_000);
+        if (alive) {
+            return {
+                sessionId: existing.sessionId,
+                host: existing.host,
+                ports: existing.ports,
+                composeProjectName: existing.composeProjectName,
+            };
+        }
+        /* Stale: handle file остался от мёртвой сессии — снимаем и продолжаем как с нуля. */
+        try {
+            rmSync(handleFilePath(sessionId), { force: true });
+        }
+        catch {
+            /* swallow — non-existent file ок */
+        }
     }
     /* Сборка образа (idempotent) */
     buildTestServerImage({
@@ -191,6 +202,25 @@ export function defineTestStack(deps = {}) {
             return handle;
         },
     };
+}
+/*
+ * Single-shot liveness check: одна попытка GET host/api/health/ready
+ * с AbortController-таймаутом. Возвращает true только при HTTP 2xx.
+ * Используется в startTestStack для проверки stale handle файла.
+ */
+export async function isHandleAlive(host, timeoutMs) {
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), timeoutMs);
+    try {
+        const res = await fetch(`${host}/api/health/ready`, { signal: controller.signal });
+        return res.ok;
+    }
+    catch {
+        return false;
+    }
+    finally {
+        clearTimeout(timer);
+    }
 }
 /*
  * Polling health-check: GET host/api/health/ready каждые 500 мс.
