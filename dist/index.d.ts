@@ -6,7 +6,6 @@ export { readHookInput, denyPreToolUse, silentExit } from './lib/claude-input.js
 export { commitFiles, type CommitFilesArgs, type CommitFilesResult, type Runner } from './lib/commit-files-core.js';
 export { isMutatingBash } from './lib/is-mutating-bash.js';
 export { currentBranch } from './lib/git-branch.js';
-export { readDevDbConfig, type DevDbConfig, type ReadDevDbConfigOptions } from './lib/dev-env.js';
 export { addTouched, readTouched, clearTouched, DEFAULT_SESSIONS_DIR } from './lib/touched.js';
 export { runSessionStart } from './hooks/session-start-core.js';
 export { runSessionEndCleanup, type SessionEndDeps } from './hooks/session-end-core.js';

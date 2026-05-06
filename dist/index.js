@@ -15,7 +15,6 @@ export { readHookInput, denyPreToolUse, silentExit } from './lib/claude-input.js
 export { commitFiles } from './lib/commit-files-core.js';
 export { isMutatingBash } from './lib/is-mutating-bash.js';
 export { currentBranch } from './lib/git-branch.js';
-export { readDevDbConfig } from './lib/dev-env.js';
 export { addTouched, readTouched, clearTouched, DEFAULT_SESSIONS_DIR } from './lib/touched.js';
 // Hook entry-points (для обёрток в проектном scripts/claude/hooks/)
 export { runSessionStart } from './hooks/session-start-core.js';
