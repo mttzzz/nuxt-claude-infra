@@ -181,16 +181,10 @@ function classifySubCommand(sub: string): MutatingVerdict {
   if (bin === 'npm' || bin === 'pnpm' || bin === 'yarn') {
     return classifyNpmLike(token.args)
   }
-  if (bin === 'prisma' || bin === 'prisma.exe') {
-    return classifyPrisma(token.args)
-  }
   if (bin === 'playwright' || bin === 'playwright.exe') {
     return { mutating: true, reason: `playwright управляет shared test-стендом (${sub})` }
   }
   if (bin === 'npx') {
-    if (token.args.includes('prisma')) {
-      return classifyPrisma(token.args.filter((a) => a !== 'prisma'))
-    }
     if (token.args[0] === 'playwright') {
       return { mutating: true, reason: `npx playwright управляет shared test-стендом` }
     }
@@ -232,9 +226,6 @@ function classifyBun(bin: string, args: string[]): MutatingVerdict {
   if (bin.startsWith('bunx') || first === 'x') {
     const innerArgs = first === 'x' ? args.slice(args.indexOf('x') + 1) : args
     const next = findFirstNonFlag(innerArgs)
-    if (next === 'prisma') {
-      return classifyPrisma(innerArgs.slice(innerArgs.indexOf('prisma') + 1))
-    }
     if (next === 'playwright') {
       return { mutating: true, reason: 'bunx playwright управляет shared test-стендом' }
     }
@@ -286,17 +277,6 @@ function classifyNpmLike(args: string[]): MutatingVerdict {
   const mutating = new Set(['install', 'i', 'add', 'remove', 'rm', 'uninstall', 'update', 'run', 'exec', 'publish'])
   if (mutating.has(sub)) {
     return { mutating: true, reason: `${sub} ставит/меняет зависимости или запускает скрипт` }
-  }
-  return { mutating: false, reason: null }
-}
-
-function classifyPrisma(args: string[]): MutatingVerdict {
-  const sub = findFirstNonFlag(args)
-  if (!sub) {
-    return { mutating: false, reason: null }
-  }
-  if (sub === 'migrate' || sub === 'db' || sub === 'generate' || sub === 'seed') {
-    return { mutating: true, reason: `prisma ${sub} меняет БД/сгенерированный код` }
   }
   return { mutating: false, reason: null }
 }

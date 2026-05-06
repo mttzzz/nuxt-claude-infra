@@ -1,13 +1,13 @@
 #!/usr/bin/env node
 // PreToolUse hook: minimal guards.
 //
-// Защита: блокировать DROP/TRUNCATE на dev-БД через MCP MySQL.
+// Защита: блокировать DROP/TRUNCATE через MCP SQL-инструменты (Postgres / MySQL / любой).
 // Обычный SELECT/INSERT/UPDATE/DELETE пропускаем — dev-БД легко восстанавливается из дампа,
 // но полное удаление таблиц — это аккуратно.
 //
 // Hook не нуждается в .claude-infra.json: блокировка срабатывает на ЛЮБОЙ MCP-инструмент,
-// который match'ит шаблон `mcp__<anything>__<anything>_sql_query`. Это покрывает все
-// типичные MCP-конфиги MySQL независимо от TOOL_PREFIX.
+// который match'ит шаблон `mcp__<anything>__<anything>_sql_query`. Покрывает все
+// типичные MCP-конфиги (postgres-mcp, mcp-server-mysql, …) независимо от TOOL_PREFIX.
 import { denyPreToolUse, readHookInput, silentExit } from '../lib/claude-input.js'
 
 const input = readHookInput()

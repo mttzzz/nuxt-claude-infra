@@ -10,7 +10,7 @@
 //   - Юзерский `bun dev` (3001) и его nuxi dev --host дочки
 //   - IDE LSP (oxlint/oxfmt/eslint) — у них живой ppid, под фильтр не попадут
 //   - vscode-server и @playwright/mcp (если mcp используется активно)
-//   - mcp-server-mysql для mcp__ai__* текущей сессии
+//   - postgres-mcp и прочие MCP-сервера (свои/parent-привязанные процессы)
 //
 // Платформа:
 //   - Win: исторически "matches → kill" (родитель в выборке wmic не используется).
