@@ -42,8 +42,6 @@ export { isMutatingBash } from './lib/is-mutating-bash.js'
 
 export { currentBranch } from './lib/git-branch.js'
 
-export { readDevDbConfig, type DevDbConfig, type ReadDevDbConfigOptions } from './lib/dev-env.js'
-
 export { addTouched, readTouched, clearTouched, DEFAULT_SESSIONS_DIR } from './lib/touched.js'
 
 // Hook entry-points (для обёрток в проектном scripts/claude/hooks/)
