@@ -1,5 +1,5 @@
 import { existsSync, mkdirSync, readdirSync, readFileSync, rmSync, statSync, unlinkSync, writeFileSync } from 'node:fs'
-import { createServer } from 'node:net'
+import { connect, createServer } from 'node:net'
 import { dirname, join } from 'node:path'
 
 import { findHarnessPid } from './harness-pid.js'
@@ -190,7 +190,7 @@ async function withAllocLock<T>(fn: () => Promise<T>): Promise<T> {
   }
 }
 
-function isPortFree(port: number): Promise<boolean> {
+function isBindable(port: number): Promise<boolean> {
   return new Promise<boolean>((resolve) => {
     const server = createServer()
     server.once('error', () => resolve(false))
@@ -199,6 +199,34 @@ function isPortFree(port: number): Promise<boolean> {
     })
     server.listen(port, '127.0.0.1')
   })
+}
+
+/*
+ * На Windows docker-биндинги (0.0.0.0:port → container) НЕ держат listener на 127.0.0.1,
+ * поэтому bind-проверка ошибочно говорит "free". Connect-проверка ловит docker-форвард:
+ * если что-то принимает TCP — порт занят, даже если bind на 127.0.0.1 успешен.
+ */
+function isAccepting(port: number): Promise<boolean> {
+  return new Promise<boolean>((resolve) => {
+    const sock = connect({ port, host: '127.0.0.1' })
+    const done = (accepting: boolean) => {
+      sock.destroy()
+      resolve(accepting)
+    }
+    sock.setTimeout(150)
+    sock.once('connect', () => done(true))
+    sock.once('error', () => done(false))
+    sock.once('timeout', () => done(false))
+  })
+}
+
+export async function isPortFree(port: number): Promise<boolean> {
+  /* Сначала connect: если что-то принимает соединения — порт занят, дальше не смотрим.
+     Параллельный run через Promise.all ломается self-connect race: наш собственный bind
+     стартует listener раньше, чем connect успевает попытаться, и connect попадает
+     в наш же временный сокет. */
+  if (await isAccepting(port)) return false
+  return isBindable(port)
 }
 
 async function findFirstFree(role: PortRole, excluded: Set<number>): Promise<number> {

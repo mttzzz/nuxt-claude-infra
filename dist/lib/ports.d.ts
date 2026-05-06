@@ -33,6 +33,7 @@ export declare function resolveSessionId(): string | null;
 export declare function slugSessionId(sessionId: string): string;
 export declare function getSessionPorts(sessionId: string): SessionPorts | null;
 export declare function freeSessionPorts(sessionId: string): void;
+export declare function isPortFree(port: number): Promise<boolean>;
 export declare function allocateSessionPorts(sessionId: string): Promise<SessionPorts>;
 export interface PidStatus {
     pid: number;
