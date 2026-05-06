@@ -47,10 +47,23 @@ export interface McpServerEnvOptions {
   envFile?: string
   envTestFile?: string
   port: string
+  /*
+   * Источник env-vars поверх .env-файла. По умолчанию `process.env`.
+   * При передаче — используется в тестах для изоляции.
+   * Семантика merge: parseEnvFile(envFile) → processEnv (последний побеждает).
+   */
+  processEnv?: NodeJS.ProcessEnv | Record<string, string | undefined>
 }
 
 export function buildMcpServerEnv(options: McpServerEnvOptions): Record<string, string> {
-  const baseEnv = parseEnvFile(options.envFile ?? '.env')
+  const fileEnv = parseEnvFile(options.envFile ?? '.env')
+  const procEnvRaw = options.processEnv ?? process.env
+  /* Отфильтровать undefined, привести к Record<string, string>. */
+  const procEnv: Record<string, string> = {}
+  for (const [key, value] of Object.entries(procEnvRaw)) {
+    if (typeof value === 'string') procEnv[key] = value
+  }
+  const baseEnv = { ...fileEnv, ...procEnv }
   const testEnv = parseEnvFile(options.envTestFile ?? '.env.test')
 
   // .env (dev) → .env.test (overrides для secrets/flags) → но DB/Redis из .env побеждает всегда.
