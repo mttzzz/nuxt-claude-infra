@@ -1,138 +1,126 @@
 # @mttzzz/nuxt-claude-infra
 
-Shared Per-session Claude Code test infrastructure для Nuxt-проектов: port-registry, Playwright MCP server, hooks (PreToolUse / PostToolUse / SessionStart / SessionEnd), `commit:files`, `mine`, `stack:*`, `kill-zombies`.
+Per-session test infrastructure for Nuxt 4+ projects driven by [Claude Code](https://claude.com/claude-code). Lets multiple parallel Claude sessions in the same working tree run isolated docker test stacks without fighting over ports, container names, or temp files.
 
-Public-репо, MIT-лицензия. Не публикуется в npm — подключается напрямую с GitHub:
+What you get:
 
-```sh
-bun add github:mttzzz/nuxt-claude-infra#v0.4.0
-# или
-bun add git+https://github.com/mttzzz/nuxt-claude-infra.git#v0.4.0
-```
+- Per-session port registry (`.claude/sessions/<id>/ports.json`) with first-free allocation under a global lock.
+- One-line vitest / Playwright presets that bring up a per-session docker stack (`pgvector/pgvector:pg18` + `redis:7-alpine` + your test image) and tear it down on session end.
+- Long-running per-session Nuxt MCP server on its own port, for Playwright MCP and manual debugging against the dev DB.
+- Globally-installed Claude Code hooks (PreToolUse / PostToolUse / SessionStart / SessionEnd) that activate only inside infra projects (no-op elsewhere).
+- CLI binaries (`nci-*`) for ports, stack lifecycle, scoped commits, and zombie-process cleanup.
 
-## Архитектура
-
-Описана в глобальном Claude-skill `~/.claude/skills/nuxt-test-infra/SKILL.md`. Кратко:
-
-- 3 типа окружений в одной сессии: dev (общий, 3001), MCP per-session (3100-3199), test stack per-session (3200-3299, 3310-3399, 6400-6499).
-- Port registry: `.claude/sessions/<sessionId>/ports.json`, alloc — first-free под глобальным lock'ом.
-- sessionId resolution: env `CLAUDE_SESSION_ID` → walking-up по `ppid` → `.claude/sessions/by-harness/<harnessPid>.json`.
-
-## Использование в проекте
-
-```ts
-// scripts/claude/mcp-url.ts (тонкая обёртка)
-import { runMcpUrl } from '@mttzzz/nuxt-claude-infra'
-import config from '../../.claude-infra.json' with { type: 'json' }
-await runMcpUrl(config)
-```
-
-`.claude-infra.json` в корне проекта — `ProjectConfig` (см. `src/config.ts`).
-
-## Локальная разработка
+## Install
 
 ```sh
-cd ~/projects/nuxt-claude-infra
-bun install
-bun typecheck
-bun test
-bun link              # link в локальный bun-registry
-
-cd ~/projects/<project>
-bun link @mttzzz/nuxt-claude-infra   # использовать локальную версию
-# … правки …
-bun unlink @mttzzz/nuxt-claude-infra && bun install   # обратно на git-pinned
+bun add -D @mttzzz/nuxt-claude-infra
+# or
+npm i -D @mttzzz/nuxt-claude-infra
 ```
 
-## Версионирование
+For the global hooks + CLI binaries (one machine-wide install, all projects share it):
 
-SemVer-теги `vX.Y.Z`. Проекты pin'ят конкретный тег через git+ssh URL. Major bump — при breaking changes в `ProjectConfig` schema или public API.
+```sh
+bun install -g @mttzzz/nuxt-claude-infra
+```
 
-## v0.4 — Globalized API
+## Quick start
 
-В v0.4 пакет дополняется helpers и конфиг-пресетами для нулевой копипасты в проектах.
-
-### `defineVitestPreset()`
+### `vitest.config.ts`
 
 ```ts
-// project: vitest.config.ts
 import { defineVitestPreset } from '@mttzzz/nuxt-claude-infra/configs/vitest'
+
 export default defineVitestPreset()
 ```
 
-Создаёт три vitest-projects (unit/component/integration) с правильным `globalSetup` для integration. Под капотом — vitest v4 API (`fileParallelism: false` для integration вместо устаревшего `singleFork`).
+Creates three vitest projects (`unit`, `component`, `integration`). The integration project's `globalSetup` brings up the per-session docker stack and exposes its host via `NUXT_TEST_HOST`.
 
-### `definePlaywrightPreset()`
+### `playwright.config.ts`
 
 ```ts
-// project: playwright.config.ts
 import { definePlaywrightPreset } from '@mttzzz/nuxt-claude-infra/configs/playwright'
+
 export default definePlaywrightPreset()
 ```
 
-### `startTestStack()` / `stopTestStack()` / `defineTestStack()`
+Same lifecycle as the vitest preset — stack starts in `globalSetup`, tears down in `globalTeardown`.
 
-`startTestStack()` идемпотентно поднимает per-session test-стек: allocate ports → build image → docker compose up → health-check. С автоматическим retry при port-conflict (max 3 попытки, без флага — всегда включено).
+### `docker-compose.test.yml`
 
-```ts
-import { defineTestStack } from '@mttzzz/nuxt-claude-infra'
-
-const stack = defineTestStack({
-  disconnectDb: async () => { /* проектный Drizzle teardown */ },
-})
-
-const handle = await stack.start()
-// handle.host = "http://127.0.0.1:3210", handle.ports, handle.sessionId
-// ... тесты ...
-await stack.stop()
-```
-
-### `templates/docker-compose.test.yml`
-
-Базовый compose-template (`pgvector/pgvector:pg18` + `redis:7-alpine` + `test-server`) подключается из проектного compose через `include:`:
+Include the bundled template and add only project-specific env:
 
 ```yaml
-# project: docker-compose.test.yml
 include:
   - path: ./node_modules/@mttzzz/nuxt-claude-infra/templates/docker-compose.test.yml
 services:
   test-server:
     environment:
-      # только project-specific env-vars
-      NUXT_EXCHANGE_RATE_API_URL: ${NUXT_EXCHANGE_RATE_API_URL}
+      MY_PROJECT_FLAG: '1'
 ```
 
-Требует Docker Compose v2.20+ (для `include:` directive).
+The template provides `postgres-test` (pgvector/pg18, tmpfs), `redis-test`, and a `test-server` that boots from your built image. Requires Docker Compose v2.20+ for `include:`.
 
-### Глобальные хуки в `~/.claude/settings.json`
+### Programmatic stack control
 
-В v0.4 хуки получили early-return на не-инфра проектах через `isInfraProject(cwd)`. Это позволяет регистрировать их **один раз глобально** в `~/.claude/settings.json` — они no-op'ят на проектах без `.claude-infra.json` или без зависимости `@mttzzz/nuxt-claude-infra` в package.json.
+```ts
+import { defineTestStack } from '@mttzzz/nuxt-claude-infra'
 
-Установка глобально (для бинарников `nci-hook-*` в PATH):
+const stack = defineTestStack({
+  disconnectDb: async () => {
+    /* project-side teardown, e.g. drizzle pool close */
+  },
+})
 
-```bash
-bun install -g github:mttzzz/nuxt-claude-infra#v0.4.0
+const handle = await stack.start()
+// handle.host = "http://127.0.0.1:3210"
+// handle.ports / handle.sessionId
+await stack.stop()
 ```
 
-Регистрация хуков в `~/.claude/settings.json` — отдельный шаг (см. Plan 4 в `docs/superpowers/plans/`).
+`startTestStack` is idempotent and pings `/api/health/ready` on stale handles (3s timeout) — if a previous session crashed without cleanup, the dead handle is removed and a fresh stack comes up.
 
-### Минимум проектных файлов после v0.4
+## CLI
 
-| Файл | Назначение | Размер |
-|---|---|---|
-| `.claude-infra.json` | (опц.) override convention-defaults | ~10 строк |
-| `vitest.config.ts` | `defineVitestPreset()` + project overrides | ~10 строк |
-| `playwright.config.ts` | `definePlaywrightPreset()` + project overrides | ~10 строк |
-| `docker-compose.test.yml` | `include:` template + project-specific env | ~15 строк |
-| `test/helpers/db.ts` | проектная Drizzle schema + `TABLES_TO_TRUNCATE[]` | ~30 строк |
-| `test/helpers/auth.ts` | (опц.) email-фикстуры + `loginAs` | ~30 строк |
+After global install (or via project `node_modules/.bin`):
 
-Без копипасты `test-stack.ts` / `docker.ts` / `playwright-global-setup.ts` — всё в пакете.
+| Binary | Purpose |
+|---|---|
+| `nci-mcp-url` | Print the MCP server URL for the current session |
+| `nci-mcp-server` | Start the per-session Nuxt MCP server on its allocated port |
+| `nci-stack-ls` | List active per-session stacks |
+| `nci-stack-kill <sessionId>` | Force-teardown a session's stack |
+| `nci-stack-prune` | Remove session dirs without a live `by-harness/<pid>` link |
+| `nci-kill-zombies` | Kill leftover `nuxi _dev` / `tinypool` / Playwright test-server processes |
+| `nci-mine` | List files touched by the current session (diagnostic) |
+| `nci-commit-files "<msg>" <files...>` | Commit only the listed files (parallel-session-safe) |
 
-## Статус
+## Configuration
 
-**v0.6.0** — `nci-stack-prune` теперь чистит ВСЕ session-dirs у которых нет живой by-harness-привязки (а не только сессии с `ports.json` где оба pid'а мёртвые). Покрывает накопленный исторический мусор и крашнувшиеся `nci-mcp-url`-only сессии без полного стека. Источник истины — `.claude/sessions/by-harness/<pid>.json` после `pruneStaleHarnessFiles`. Backwards-compatible — поведение для сессий с активным стеком не меняется.
+Most defaults are derived from the project directory name (e.g. `shop.example.com` → docker prefix `shop-example-test`, test DB `shop_example_test`, ports allocated from the standard ranges). Override only when convention doesn't fit:
 
-**v0.5.0** — stale-handle liveness check в `startTestStack` + публичный `isHandleAlive(host, timeoutMs)` helper. Если предыдущая сессия упала без cleanup и handle file остался — пингуем `/api/health/ready` (3s timeout), на dead host удаляем stale файл и поднимаем стек заново. Фикс для ECONNREFUSED после крашей.
+```json
+// .claude-infra.json
+{
+  "dockerProjectPrefix": "my-test",
+  "testDbName": "my_test"
+}
+```
 
-**v0.4.0** — generic test-helpers, конфиг-пресеты (`defineVitestPreset`/`definePlaywrightPreset`), docker-compose template (pgvector/pg18) вынесены из проектов в пакет. Полная миграция трёх проектов (ai.pushka.biz, easy2.pushka.biz, kp.modmb.com) завершена — см. `docs/superpowers/plans/`.
+Standard ranges:
+
+- MCP per-session: `3100–3199`
+- test-server: `3200–3299`
+- postgres-test: `3310–3399`
+- redis-test: `6400–6499`
+
+## Architecture (brief)
+
+- **Three environments per session.** Shared dev server (3001), per-session MCP server (3100-range, dev DB), per-session test stack (docker, tmpfs DB, dummy secrets).
+- **Session resolution.** Reads `CLAUDE_SESSION_ID` env, otherwise walks up `ppid` to the Claude harness process and reads `.claude/sessions/by-harness/<pid>.json` written by the SessionStart hook.
+- **Port registry.** First free port from each range, persisted in `.claude/sessions/<id>/ports.json`. Lock-protected so parallel `allocateSessionPorts` calls don't collide.
+- **Hook gating.** Hooks short-circuit on projects without `.claude-infra.json` and without `@mttzzz/nuxt-claude-infra` in `package.json`, so installing them globally is safe.
+
+## License
+
+MIT.

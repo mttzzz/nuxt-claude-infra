@@ -56,9 +56,8 @@ const DEFAULT_KILL_ZOMBIES_PATTERNS = [
  * deriveProjectSlug отрезает domain-suffix от имени директории,
  * если имя похоже на домен. Используется для convention-defaults.
  *
- *   "ai.pushka.biz"    → "ai.pushka"
- *   "easy2.pushka.biz" → "easy2.pushka"
- *   "kp.modmb.com"     → "kp.modmb"
+ *   "shop.example.com" → "shop.example"
+ *   "myapp.io"         → "myapp"
  *   "myapp"            → "myapp"          (1 segment — не трогаем)
  *   "foo.bar"          → "foo"            (2 segment — отрезаем последний)
  */
@@ -70,16 +69,16 @@ export function deriveProjectSlug(cwd) {
     return parts.slice(0, -1).join('.');
 }
 /*
- * "ai.pushka.biz" → "ai-pushka-test"
- * "myapp"         → "myapp-test"
+ * "shop.example.com" → "shop-example-test"
+ * "myapp"            → "myapp-test"
  */
 export function deriveDockerProjectPrefix(cwd) {
     const slug = deriveProjectSlug(cwd);
     return slug.replaceAll('.', '-') + '-test';
 }
 /*
- * "ai.pushka.biz" → "ai_pushka_test"
- * "my-app"        → "my_app_test"
+ * "shop.example.com" → "shop_example_test"
+ * "my-app"           → "my_app_test"
  */
 export function deriveTestDbName(cwd) {
     const slug = deriveProjectSlug(cwd);
