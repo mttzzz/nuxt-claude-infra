@@ -2,8 +2,8 @@
 // bun mcp:server — Nuxt на per-session порту с dev-БД для Playwright MCP и ручной отладки.
 //
 // Порт выделяется через allocateSessionPorts(CLAUDE_SESSION_ID) → .claude/sessions/<id>/ports.json.
-// БД: проектная dev-БД (localhost:3306, имя из NUXT_DB_NAME / .env проекта) — shared между всеми сессиями.
-// API-ключи из .env (реальные, сервер бьёт в живой LLM).
+// БД: проектная dev-БД (Postgres, POSTGRES_URL из Infisical/.env) — shared между всеми сессиями.
+// API-ключи из Infisical/.env (реальные, сервер бьёт в живой LLM).
 // Идемпотентность: если на своём порту уже живой Nuxt — exit 0 без спавна.
 import { spawn } from 'node:child_process'
 import { existsSync, readFileSync, writeFileSync } from 'node:fs'
@@ -13,12 +13,7 @@ import { isMainModule } from '../lib/is-main.js'
 import { allocateSessionPorts, resolveSessionId, SESSIONS_DIR } from '../lib/ports.js'
 
 const DEV_DB_KEYS = [
-  'DATABASE_URL',
-  'NUXT_DB_HOST',
-  'NUXT_DB_PORT',
-  'NUXT_DB_USER',
-  'NUXT_DB_PASSWORD',
-  'NUXT_DB_NAME',
+  'POSTGRES_URL',
   'NUXT_REDIS_HOST',
   'NUXT_REDIS_PORT',
   'NUXT_REDIS_PASSWORD',
