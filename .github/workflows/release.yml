@@ -22,13 +22,14 @@ jobs:
           node-version: 22
           registry-url: https://registry.npmjs.org
 
+      - name: Upgrade npm (OIDC trusted publisher requires 11.5.1+)
+        run: npm install -g npm@latest
+
       - run: bun install --frozen-lockfile
 
       - run: bun run build
 
-      - run: npm publish --provenance
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+      - run: npm publish --provenance --access public
 
       - uses: softprops/action-gh-release@v2
         with:
