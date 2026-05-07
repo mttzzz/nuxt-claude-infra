@@ -69,16 +69,32 @@ describe('buildMcpServerEnv — process.env (new infisical-run path)', () => {
 })
 
 describe('buildMcpServerEnv — DEV_DB_KEYS protection', () => {
-  it('.env.test overrides .env for non-DB keys, .env wins for DB keys', () => {
+  it('.env.test overrides .env for non-DB keys, .env wins for POSTGRES_URL', () => {
     const { envFile, envTestFile, cleanup } = setup()
     try {
-      writeFileSync(envFile, 'BETTER_AUTH_SECRET=prod\nNUXT_DB_PORT=3306')
-      writeFileSync(envTestFile, 'BETTER_AUTH_SECRET=test\nNUXT_DB_PORT=9999')
+      writeFileSync(envFile, 'BETTER_AUTH_SECRET=prod\nPOSTGRES_URL=postgres://dev')
+      writeFileSync(envTestFile, 'BETTER_AUTH_SECRET=test\nPOSTGRES_URL=postgres://test')
 
       const env = buildMcpServerEnv({ envFile, envTestFile, port: '3147', processEnv: {} })
 
       expect(env.BETTER_AUTH_SECRET).toBe('test')
-      expect(env.NUXT_DB_PORT).toBe('3306')
+      expect(env.POSTGRES_URL).toBe('postgres://dev')
+    } finally {
+      cleanup()
+    }
+  })
+
+  it('keeps dev POSTGRES_URL from processEnv (Infisical) when .env.test sets test URL', () => {
+    /* Регрессия: .env.test содержит POSTGRES_URL для тестов, но MCP-сервер должен бить в dev-БД из Infisical. */
+    const { envFile, envTestFile, cleanup } = setup()
+    try {
+      writeFileSync(envFile, '')
+      writeFileSync(envTestFile, 'POSTGRES_URL=postgres://test:test@127.0.0.1:5432/kp_test')
+      const processEnv = { POSTGRES_URL: 'postgres://mttzzzz@localhost:5432/kp_dev' }
+
+      const env = buildMcpServerEnv({ envFile, envTestFile, port: '3100', processEnv })
+
+      expect(env.POSTGRES_URL).toBe('postgres://mttzzzz@localhost:5432/kp_dev')
     } finally {
       cleanup()
     }
