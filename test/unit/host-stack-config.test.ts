@@ -67,4 +67,28 @@ describe('defineHostStackConfig', () => {
     const ctx = defineHostStackConfig({ dbBase: 'x', portBase: 3000 })
     expect(Object.isFrozen(ctx)).toBe(true)
   })
+
+  it('redisPassword fallback на process.env.NUXT_REDIS_PASSWORD когда option не передан', () => {
+    const old = process.env.NUXT_REDIS_PASSWORD
+    process.env.NUXT_REDIS_PASSWORD = 'env-pw'
+    try {
+      const ctx = defineHostStackConfig({ dbBase: 'x', portBase: 3000 })
+      expect(ctx.options.redisPassword).toBe('env-pw')
+    } finally {
+      if (old === undefined) delete process.env.NUXT_REDIS_PASSWORD
+      else process.env.NUXT_REDIS_PASSWORD = old
+    }
+  })
+
+  it('redisPassword: explicit option побеждает process.env', () => {
+    const old = process.env.NUXT_REDIS_PASSWORD
+    process.env.NUXT_REDIS_PASSWORD = 'env-pw'
+    try {
+      const ctx = defineHostStackConfig({ dbBase: 'x', portBase: 3000, redisPassword: 'opt-pw' })
+      expect(ctx.options.redisPassword).toBe('opt-pw')
+    } finally {
+      if (old === undefined) delete process.env.NUXT_REDIS_PASSWORD
+      else process.env.NUXT_REDIS_PASSWORD = old
+    }
+  })
 })

@@ -9,7 +9,7 @@ export interface HostStackOptions {
     redisHost?: string;
     /** Redis port (default 6379). */
     redisPort?: number;
-    /** Redis password (default ''). */
+    /** Redis password. Resolution order: explicit option → process.env.NUXT_REDIS_PASSWORD → ''. */
     redisPassword?: string;
     /** Дефолтное число параллельных workers. Переопределяется TEST_WORKERS env. Default 4. */
     workerCountDefault?: number;

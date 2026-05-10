@@ -40,7 +40,7 @@ export function defineHostStackConfig(opts) {
         redisDbBase: opts.redisDbBase ?? DEFAULTS.redisDbBase,
         redisHost: opts.redisHost ?? DEFAULTS.redisHost,
         redisPort: opts.redisPort ?? DEFAULTS.redisPort,
-        redisPassword: opts.redisPassword ?? DEFAULTS.redisPassword,
+        redisPassword: opts.redisPassword ?? process.env.NUXT_REDIS_PASSWORD ?? DEFAULTS.redisPassword,
         workerCountDefault: opts.workerCountDefault ?? DEFAULTS.workerCountDefault,
         dbUser: opts.dbUser ?? DEFAULTS.dbUser,
         dbPassword: opts.dbPassword ?? DEFAULTS.dbPassword,
