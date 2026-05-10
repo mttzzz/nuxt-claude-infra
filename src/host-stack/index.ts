@@ -56,4 +56,4 @@ export {
 export { runPreviewTest } from './preview-test.js'
 
 export { resolveWorkerId } from './helpers/worker-id.js'
-export { useSharedNuxt } from './helpers/use-shared-nuxt.js'
+

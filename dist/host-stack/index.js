@@ -37,4 +37,3 @@ export { defineHostStackConfig } from './define-config.js';
 export { ensureTestStack, ensureTestDb, ensureSecondaryDbsFromPrimary, runMigrationsIfNeeded, hashBuildInputs, hashMigrations, loadCachedHash, saveCachedHash, isServerAlive, } from './orchestrator.js';
 export { runPreviewTest } from './preview-test.js';
 export { resolveWorkerId } from './helpers/worker-id.js';
-export { useSharedNuxt } from './helpers/use-shared-nuxt.js';

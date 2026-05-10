@@ -3,5 +3,4 @@ export type { HostStackContext, HostStackOptions, ResolvedHostStackOptions } fro
 export { ensureTestStack, ensureTestDb, ensureSecondaryDbsFromPrimary, runMigrationsIfNeeded, hashBuildInputs, hashMigrations, loadCachedHash, saveCachedHash, isServerAlive, type EnsureStackResult, type EnsureTestDbOptions, type RunMigrationsOptions, type RunMigrationsResult, } from './orchestrator.js';
 export { runPreviewTest } from './preview-test.js';
 export { resolveWorkerId } from './helpers/worker-id.js';
-export { useSharedNuxt } from './helpers/use-shared-nuxt.js';
 //# sourceMappingURL=index.d.ts.map

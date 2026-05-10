@@ -58,18 +58,21 @@
     "prepack": "npm run build"
   },
   "peerDependencies": {
-    "zod": "^4.0.0"
+    "zod": "^4.0.0",
+    "@nuxt/test-utils": "^4.0.3",
+    "vitest": "^4.0.0"
+  },
+  "peerDependenciesMeta": {
+    "@nuxt/test-utils": { "optional": true },
+    "vitest": { "optional": true }
   },
   "dependencies": {
     "postgres": "^3.4.7"
   },
   "devDependencies": {
-    "@nuxt/test-utils": "^4.0.3",
-    "@playwright/test": "^1.59.1",
     "@types/bun": "latest",
     "@types/node": "^22.0.0",
     "typescript": "^5.6.0",
-    "vitest": "^4.1.5",
     "zod": "^4.0.0"
   },
   "files": [
