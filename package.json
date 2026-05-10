@@ -1,8 +1,8 @@
 {
   "name": "@mttzzz/nuxt-claude-infra",
-  "version": "0.7.5",
+  "version": "1.0.0",
   "type": "module",
-  "description": "Per-session Claude Code test infra (port-registry, Playwright MCP server, hooks, commit-files) shared between Nuxt projects",
+  "description": "Host-stack test infra for Nuxt projects: per-worker DB + N parallel preview-серверов; Claude session hooks; commit-files / kill-zombies CLIs",
   "license": "MIT",
   "publishConfig": {
     "access": "public"
@@ -22,6 +22,14 @@
       "types": "./dist/config.d.ts",
       "default": "./dist/config.js"
     },
+    "./host-stack": {
+      "types": "./dist/host-stack/index.d.ts",
+      "default": "./dist/host-stack/index.js"
+    },
+    "./host-stack/setup": {
+      "types": "./dist/host-stack/setup/index.d.ts",
+      "default": "./dist/host-stack/setup/index.js"
+    },
     "./hooks/*": {
       "types": "./dist/hooks/*.d.ts",
       "default": "./dist/hooks/*.js"
@@ -33,21 +41,10 @@
     "./lib/*": {
       "types": "./dist/lib/*.d.ts",
       "default": "./dist/lib/*.js"
-    },
-    "./configs/*": {
-      "types": "./dist/configs/*.d.ts",
-      "default": "./dist/configs/*.js"
-    },
-    "./templates/*": "./dist/templates/*"
+    }
   },
   "bin": {
-    "nci-mcp-url": "./dist/cli/mcp-url.js",
-    "nci-mcp-server": "./dist/cli/mcp-server.js",
-    "nci-mine": "./dist/cli/mine.js",
     "nci-commit-files": "./dist/cli/commit-files.js",
-    "nci-stack-ls": "./dist/cli/stack-ls.js",
-    "nci-stack-kill": "./dist/cli/stack-kill.js",
-    "nci-stack-prune": "./dist/cli/stack-prune.js",
     "nci-kill-zombies": "./dist/cli/kill-zombies.js",
     "nci-hook-session-start": "./dist/hooks/session-start.js",
     "nci-hook-session-end": "./dist/hooks/session-end.js",
@@ -57,12 +54,14 @@
   "scripts": {
     "test": "bun test",
     "typecheck": "tsc --noEmit",
-    "build": "tsc -p tsconfig.build.json && bun run copy-templates",
-    "copy-templates": "bun run scripts/copy-templates.ts",
+    "build": "tsc -p tsconfig.build.json",
     "prepack": "npm run build"
   },
   "peerDependencies": {
     "zod": "^4.0.0"
+  },
+  "dependencies": {
+    "postgres": "^3.4.7"
   },
   "devDependencies": {
     "@nuxt/test-utils": "^4.0.3",

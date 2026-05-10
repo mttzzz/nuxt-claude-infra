@@ -1,0 +1,1 @@
+{"version":3,"file":"vitest-global-setup.d.ts","sourceRoot":"","sources":["../../../src/host-stack/setup/vitest-global-setup.ts"],"names":[],"mappings":"AAMA,OAAO,KAAK,EAAE,gBAAgB,EAAE,MAAM,qBAAqB,CAAA;AAE3D,wBAAgB,uBAAuB,CAAC,GAAG,EAAE,gBAAgB,GAAG,MAAM,OAAO,CAAC,MAAM,OAAO,CAAC,IAAI,CAAC,CAAC,CAcjG"}
