@@ -19,11 +19,12 @@ jobs:
 
       - uses: actions/setup-node@v4
         with:
-          node-version: 22
+          node-version: 24
           registry-url: https://registry.npmjs.org
 
-      - name: Upgrade npm (OIDC trusted publisher requires 11.5.1+)
-        run: npm install -g npm@latest
+      # Node 24 LTS поставляется с npm 11.x — достаточно для OIDC trusted publisher (требует 11.5.1+).
+      # Раньше тут был `npm install -g npm@latest`, но self-upgrade ломался MODULE_NOT_FOUND
+      # на promise-retry посреди reify (см. failed run 25621554664).
 
       - run: bun install --frozen-lockfile
 
