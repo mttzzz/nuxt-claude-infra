@@ -1,6 +1,6 @@
 {
   "name": "@mttzzz/nuxt-claude-infra",
-  "version": "0.7.2",
+  "version": "0.7.3",
   "type": "module",
   "description": "Per-session Claude Code test infra (port-registry, Playwright MCP server, hooks, commit-files) shared between Nuxt projects",
   "license": "MIT",
