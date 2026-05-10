@@ -141,25 +141,18 @@ bun test:e2e           # 4 playwright workers × per-worker host
 
 ### Peer dependencies
 
-- `drizzle-orm` ^1.0 (для `createTestDb`)
-- `@nuxt/test-utils` ^4.0 (для setup factories + `createUseSharedNuxt`)
+- `@nuxt/test-utils` ^4.0 (для setup factories)
 - `vitest` ^4.0 (для setup factories)
-- `zod` ^4.0 (для config schema)
+- `drizzle-orm` ^1.0 + `postgres` (для `createTestDb`) — провайдится консьюмером
 
 Все optional — нужны только если используешь соответствующий subpath.
 
-## CLI binaries
+## v2.0 — pure TypeScript devDep
 
-- `nci-commit-files <message> <files...>` — git commit с явным списком файлов (защита от
-  parallel-session race в одной ветке)
-- `nci-kill-zombies` — прибирает зомби-процессы node/bun/chrome после тестов
+Пакет НЕ содержит CLI-бинарников и Claude session hooks. Все они переехали в bash-скрипты
+в [`~/.claude/scripts/`](https://github.com/mttzzz/claude-config) (commit-files, kill-zombies, sql-guard).
+Глобальная установка пакета НЕ требуется.
 
-## Claude Code hooks
-
-- `nci-hook-session-start`, `nci-hook-session-end`, `nci-hook-pre-tool-use`, `nci-hook-post-tool-use`
-
-Прописываются в `~/.claude/settings.json` для отслеживания Claude session lifecycle.
-
-## Migration from v0.7
+## Migration
 
 См. [CHANGELOG.md](./CHANGELOG.md).

@@ -1,33 +1,16 @@
 /*
- * @mttzzz/nuxt-claude-infra — public API
+ * @mttzzz/nuxt-claude-infra v2.0 — host-stack для Nuxt-проектов.
  *
- * v1.0: drop docker per-session test-stack (per-session ports, mcp-server, dock-compose template).
- * Test-инфра теперь через host-stack: per-worker DB + N preview-серверов параллельно.
- * См. ./host-stack для config/orchestrator/preview-test/setup helpers.
+ * Per-worker DB (`{dbBase}_w{N}`) + N preview-серверов параллельно.
+ * См. host-stack/index.ts для полного API.
  *
- * Сохранено:
- *   - cli: nci-commit-files, nci-kill-zombies (used by all projects)
- *   - hooks: session-start, session-end, pre/post-tool-use (Claude lifecycle)
- *   - lib: pure helpers (commit-files-core, harness-pid, proc, touched, claude-input, ports/sessions tracking)
- *
- * Removed (drop in v1.0):
- *   - docker per-session stack (lib/{test-stack, docker})
- *   - configs/{vitest,playwright}-global-setup (заменены host-stack/setup)
- *   - lib/{db, e2e} — функции инлайнены в проекты или вынесены в host-stack/
- *   - cli/{mcp-*, mine, stack-*} — relict per-session port-registry
+ * v2.0 changes (breaking from v1.x):
+ *   - Removed: cli/* (commit-files, kill-zombies) — заменены bash в ~/.claude/scripts/
+ *   - Removed: hooks/* (session-start, session-end, pre/post-tool-use) — все obsolete после v1.0,
+ *     pre-tool-use SQL guard переехал в bash ~/.claude/scripts/sql-guard.sh
+ *   - Removed: lib/* (claude-input, commit-files-core, harness-pid, etc.) — поддерживали bins/hooks
+ *   - Removed: config.ts (loadProjectConfig) — нужен был только hooks
+ *   - Package больше не имеет bins. Не нужно глобально устанавливать.
+ *   - Чистый TypeScript devDep — только host-stack module.
  */
-// Config schema
-export { ProjectConfigSchema, loadProjectConfig } from './config.js';
-// Lib — pure helpers (used by hooks + cli)
-export { PORT_RANGES, SESSIONS_DIR, SESSIONS_BY_HARNESS_DIR, resolveSessionId, slugSessionId, allocateSessionPorts, getSessionPorts, freeSessionPorts, listAllSessions, writeSessionByHarness, readSessionByHarness, removeSessionByHarness, pruneStaleHarnessFiles, } from './lib/ports.js';
-export { findHarnessPid } from './lib/harness-pid.js';
-export { listProcs, killTree } from './lib/proc.js';
-export { readHookInput, denyPreToolUse, silentExit } from './lib/claude-input.js';
-export { commitFiles } from './lib/commit-files-core.js';
-export { isMutatingBash } from './lib/is-mutating-bash.js';
-export { currentBranch } from './lib/git-branch.js';
-export { addTouched, readTouched, clearTouched, DEFAULT_SESSIONS_DIR } from './lib/touched.js';
-export { isInfraProject } from './lib/is-infra-project.js';
-// Hook entry-points
-export { runSessionStart } from './hooks/session-start-core.js';
-export { runSessionEndCleanup } from './hooks/session-end-core.js';
+export * from './host-stack/index.js';

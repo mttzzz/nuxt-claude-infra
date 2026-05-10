@@ -1,5 +1,35 @@
 # Changelog
 
+## v2.0.0 — drop bins / hooks / cli, pure TypeScript devDep
+
+**BREAKING.** Пакет больше не содержит CLI-бинарников и Claude session hooks —
+все они переехали в bash-скрипты в `~/.claude/scripts/` (commit-files, kill-zombies, sql-guard).
+Глобальная установка пакета НЕ нужна. Чистый TS devDep.
+
+### Removed
+
+- All `bin` entries: `nci-commit-files`, `nci-kill-zombies`, `nci-hook-*` (4 hook bins)
+- `src/cli/` (commit-files, kill-zombies)
+- `src/hooks/` (session-start, session-end, pre-tool-use, post-tool-use)
+- `src/lib/` (claude-input, commit-files-core, harness-pid, proc, ports, touched, etc.)
+- `src/config.ts` (loadProjectConfig — нужен был только hooks)
+- `zod` peer dep
+
+### Migration from v1.x
+
+В проектах:
+1. Убрать `&& nci-kill-zombies` из `test:unit`/`test:component` scripts (или заменить
+   на `&& bash ~/.claude/scripts/kill-zombies.sh` если нужно).
+2. Если `commit-cmd` в `## Project parameters` ссылается на `nci-commit-files` —
+   заменить на `bash ~/.claude/scripts/commit-files.sh "<msg>" <files...>`.
+3. `bun update @mttzzz/nuxt-claude-infra` → `^2.0.0`.
+
+В `~/.claude/`:
+1. Убрать global install: `bun pm rm -g @mttzzz/nuxt-claude-infra`.
+2. `~/.claude/settings.json` hooks — заменить ссылки на `nci-hook-*` на bash скрипты
+   (см. `~/.claude/scripts/sql-guard.sh` — единственный нужный hook).
+3. Skill `nuxt-test-infra` — удалить (целиком обсолетна).
+
 ## v1.0.0 — host-stack architecture
 
 **BREAKING.** Полный отказ от docker per-session test-stack в пользу host-stack:

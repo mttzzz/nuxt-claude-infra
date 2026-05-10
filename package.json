@@ -1,8 +1,8 @@
 {
   "name": "@mttzzz/nuxt-claude-infra",
-  "version": "1.0.0",
+  "version": "2.0.0",
   "type": "module",
-  "description": "Host-stack test infra for Nuxt projects: per-worker DB + N parallel preview-серверов; Claude session hooks; commit-files / kill-zombies CLIs",
+  "description": "Host-stack test infra for Nuxt projects: per-worker DB + N parallel preview-серверов. Pure TypeScript devDep, no bins.",
   "license": "MIT",
   "publishConfig": {
     "access": "public"
@@ -18,10 +18,6 @@
       "types": "./dist/index.d.ts",
       "default": "./dist/index.js"
     },
-    "./config": {
-      "types": "./dist/config.d.ts",
-      "default": "./dist/config.js"
-    },
     "./host-stack": {
       "types": "./dist/host-stack/index.d.ts",
       "default": "./dist/host-stack/index.js"
@@ -33,27 +29,7 @@
     "./host-stack/setup": {
       "types": "./dist/host-stack/setup/index.d.ts",
       "default": "./dist/host-stack/setup/index.js"
-    },
-    "./hooks/*": {
-      "types": "./dist/hooks/*.d.ts",
-      "default": "./dist/hooks/*.js"
-    },
-    "./cli/*": {
-      "types": "./dist/cli/*.d.ts",
-      "default": "./dist/cli/*.js"
-    },
-    "./lib/*": {
-      "types": "./dist/lib/*.d.ts",
-      "default": "./dist/lib/*.js"
     }
-  },
-  "bin": {
-    "nci-commit-files": "./dist/cli/commit-files.js",
-    "nci-kill-zombies": "./dist/cli/kill-zombies.js",
-    "nci-hook-session-start": "./dist/hooks/session-start.js",
-    "nci-hook-session-end": "./dist/hooks/session-end.js",
-    "nci-hook-pre-tool-use": "./dist/hooks/pre-tool-use.js",
-    "nci-hook-post-tool-use": "./dist/hooks/post-tool-use.js"
   },
   "scripts": {
     "test": "bun test",
@@ -62,7 +38,6 @@
     "prepack": "npm run build"
   },
   "peerDependencies": {
-    "zod": "^4.0.0",
     "@nuxt/test-utils": "^4.0.3",
     "vitest": "^4.0.0"
   },
@@ -76,12 +51,12 @@
   "devDependencies": {
     "@types/bun": "latest",
     "@types/node": "^22.0.0",
-    "typescript": "^5.6.0",
-    "zod": "^4.0.0"
+    "typescript": "^5.6.0"
   },
   "files": [
     "dist/",
     "README.md",
+    "CHANGELOG.md",
     "LICENSE"
   ]
 }
