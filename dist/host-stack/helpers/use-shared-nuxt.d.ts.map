@@ -1,0 +1,1 @@
+{"version":3,"file":"use-shared-nuxt.d.ts","sourceRoot":"","sources":["../../../src/host-stack/helpers/use-shared-nuxt.ts"],"names":[],"mappings":"AAgBA,MAAM,MAAM,OAAO,GAAG,CAAC,IAAI,EAAE;IAAE,IAAI,EAAE,MAAM,CAAA;CAAE,KAAK,OAAO,CAAC,IAAI,CAAC,CAAA;AAE/D,wBAAgB,mBAAmB,CAAC,KAAK,EAAE,OAAO,GAAG,MAAM,OAAO,CAAC,IAAI,CAAC,CAUvE"}

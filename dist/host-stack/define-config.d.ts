@@ -5,9 +5,15 @@ export interface HostStackOptions {
     portBase: number;
     /** Базовый Redis db. Worker N → db redisDbBase + N. Default 0. */
     redisDbBase?: number;
+    /** Redis host (default '127.0.0.1'). */
+    redisHost?: string;
+    /** Redis port (default 6379). */
+    redisPort?: number;
+    /** Redis password (default ''). */
+    redisPassword?: string;
     /** Дефолтное число параллельных workers. Переопределяется TEST_WORKERS env. Default 4. */
     workerCountDefault?: number;
-    /** Локальный PG user (default 'mttzzzz', no password). */
+    /** Локальный PG user (default 'mttzzzz', no password — local trust). */
     dbUser?: string;
     /** Локальный PG password (default ''). */
     dbPassword?: string;
@@ -17,7 +23,7 @@ export interface HostStackOptions {
     dbPort?: number;
     /** Test-server host (default '127.0.0.1'). */
     serverHost?: string;
-    /** Дополнительные NUXT_* env-vars из process.env, которые ОСОЗНАННО пробрасываются в server.
+    /** Дополнительные env-vars из process.env, которые ОСОЗНАННО пробрасываются в server (помимо .env.test).
      *  Например: ['NUXT_EXCHANGE_RATE_API_URL', 'NUXT_EXCHANGE_RATE_API_SECRET'] для read-only внутреннего API. */
     envWhitelist?: string[];
     /** Дирки для build hash (default ['server', 'app', 'shared', 'modules']). */
@@ -28,6 +34,8 @@ export interface HostStackOptions {
     migrationsDir?: string;
     /** Каталог для hash-cache файлов (default '.tmp/test-stack'). */
     stateDir?: string;
+    /** Project root (default process.cwd()). Для unit-тестов host-stack в самом пакете. */
+    rootDir?: string;
 }
 export interface ResolvedHostStackOptions extends Required<HostStackOptions> {
 }
@@ -47,9 +55,9 @@ export interface HostStackContext {
     testRedisDb: (workerId: number) => number;
     /** Прочитать TEST_WORKERS env или default. */
     resolveWorkerCount: () => number;
-    /** Env для spawn'а test-сервера worker'а. SAFETY whitelist-only. */
+    /** Env для spawn'а test-сервера worker'а. SAFETY whitelist-only — см. JSDoc файла. */
     buildTestServerEnv: (workerId?: number) => Record<string, string>;
-    /** Build hash file path (для cache build artefacts). */
+    /** Build hash file path. */
     buildHashFile: string;
     /** Migrations hash file path. */
     migrationsHashFile: string;

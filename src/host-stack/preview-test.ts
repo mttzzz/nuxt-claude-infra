@@ -1,11 +1,12 @@
 /* runPreviewTest(ctx) — entry point для project's `bun preview:test` script.
  *
- * Логика:
- *   1. hash inputs → если нужно, build
- *   2. ensureDb worker 1 + migrate, клон в worker 2..N через CREATE DATABASE TEMPLATE
- *   3. spawn N серверов: bun .output/server/index.mjs на портах portBase+1..portBase+N
- *   4. ждём health на всех — потом печатаем READY
- *   5. Ctrl+C → graceful kill всех детей
+ * Pipeline:
+ *   1. ensureBuildArtifact   — hash inputs → build if needed
+ *   2. preparePrimaryDb      — ensureDb + migrate worker 1
+ *   3. ensureSecondaryDbs    — клон 2..N через CREATE DATABASE TEMPLATE (если workerCount > 1)
+ *   4. spawnPreviewServers   — N процессов bun .output/server/index.mjs
+ *   5. waitForAllHealthy     — poll /api/health/ready всех серверов
+ *   6. blockUntilSignal      — ждём SIGINT/SIGTERM, потом graceful kill
  *
  * Vitest/playwright globalSetup только проверяет alive (через ensureTestStack).
  * Если меняешь server/** → перезапусти этот процесс. */
@@ -13,10 +14,9 @@
 import { spawn, spawnSync, type ChildProcess } from 'node:child_process'
 import { existsSync } from 'node:fs'
 
-import postgres from 'postgres'
-
 import type { HostStackContext } from './define-config.js'
 import {
+  ensureSecondaryDbsFromPrimary,
   ensureTestDb,
   hashBuildInputs,
   isServerAlive,
@@ -28,27 +28,46 @@ import {
 export async function runPreviewTest(ctx: HostStackContext): Promise<void> {
   const workerCount = ctx.resolveWorkerCount()
 
-  /* --- BUILD --- */
-  const newHash = hashBuildInputs(process.cwd(), ctx.options.buildInputDirs, ctx.options.buildInputFiles)
+  ensureBuildArtifact(ctx)
+  const migrationApplied = await preparePrimaryDb(ctx)
+  if (workerCount > 1) {
+    await ensureSecondaryDbsFromPrimary(ctx, workerCount, migrationApplied)
+  }
+
+  const children = spawnPreviewServers(ctx, workerCount)
+  installSignalHandlers(children)
+
+  await waitForAllHealthy(ctx, workerCount, children)
+
+  console.log(`[preview:test] all ${String(workerCount)} workers ready. press Ctrl+C to stop.`)
+  await blockForever()
+}
+
+/** Phase 1: hash inputs → if changed, run `bun nuxt build` (foreground). */
+function ensureBuildArtifact(ctx: HostStackContext): void {
+  const newHash = hashBuildInputs(ctx.options.rootDir, ctx.options.buildInputDirs, ctx.options.buildInputFiles)
   const cached = loadCachedHash(ctx.buildHashFile)
   const outputExists = existsSync(ctx.buildOutputMarker)
 
   if (cached === newHash && outputExists) {
     console.log(`[preview:test] build cache hit (${newHash}) → skip nuxt build`)
-  } else {
-    const reason = !outputExists ? 'no .output/' : `hash changed ${cached ?? '(none)'} → ${newHash}`
-    console.log(`[preview:test] building production bundle (${reason})...`)
-    const buildResult = spawnSync('bun', ['nuxt', 'build'], { stdio: 'inherit' })
-    if (buildResult.status !== 0) {
-      console.error('[preview:test] build failed')
-      process.exit(buildResult.status ?? 1)
-    }
-    saveCachedHash(ctx.buildHashFile, newHash)
-    console.log(`[preview:test] build done, cached as ${newHash}`)
+    return
   }
 
-  /* --- DB SETUP --- */
-  console.log(`[preview:test] preparing ${String(workerCount)} test DB(s)...`)
+  const reason = !outputExists ? 'no .output/' : `hash changed ${cached ?? '(none)'} → ${newHash}`
+  console.log(`[preview:test] building production bundle (${reason})...`)
+  const buildResult = spawnSync('bun', ['nuxt', 'build'], { stdio: 'inherit' })
+  if (buildResult.status !== 0) {
+    console.error('[preview:test] build failed')
+    process.exit(buildResult.status ?? 1)
+  }
+  saveCachedHash(ctx.buildHashFile, newHash)
+  console.log(`[preview:test] build done, cached as ${newHash}`)
+}
+
+/** Phase 2: ensure primary worker DB exists + migrations applied. Returns true if migration was run. */
+async function preparePrimaryDb(ctx: HostStackContext): Promise<boolean> {
+  console.log(`[preview:test] preparing test DB(s)...`)
   await ensureTestDb({ adminUrl: ctx.testAdminPostgresUrl(), database: ctx.testDbName(1) })
   const migration = runMigrationsIfNeeded({
     postgresUrl: ctx.testPostgresUrl(1),
@@ -58,61 +77,14 @@ export async function runPreviewTest(ctx: HostStackContext): Promise<void> {
   console.log(
     `[preview:test] primary DB ${ctx.testDbName(1)} migrations=${migration.skipped ? 'skipped' : 'applied'}`,
   )
+  return !migration.skipped
+}
 
-  if (workerCount > 1) {
-    const sql = postgres(ctx.testAdminPostgresUrl(), { max: 1, onnotice: () => {} })
-    try {
-      for (let i = 2; i <= workerCount; i++) {
-        const db = ctx.testDbName(i)
-        const force = !migration.skipped
-        const exists = await sql<{ exists: boolean }[]>`
-          SELECT EXISTS(SELECT 1 FROM pg_database WHERE datname = ${db}) AS exists
-        `
-        if (exists[0]?.exists && !force) continue
-        if (exists[0]?.exists) {
-          await sql.unsafe(
-            `SELECT pg_terminate_backend(pid) FROM pg_stat_activity WHERE datname='${db}' AND pid<>pg_backend_pid()`,
-          )
-          await sql.unsafe(`DROP DATABASE "${db}"`)
-        }
-        await sql.unsafe(
-          `SELECT pg_terminate_backend(pid) FROM pg_stat_activity WHERE datname='${ctx.testDbName(1)}' AND pid<>pg_backend_pid()`,
-        )
-        await sql.unsafe(`CREATE DATABASE "${db}" TEMPLATE "${ctx.testDbName(1)}"`)
-        console.log(`[preview:test] cloned ${ctx.testDbName(1)} → ${db}`)
-      }
-    } finally {
-      await sql.end({ timeout: 5 })
-    }
-  }
-
-  /* --- SPAWN N SERVERS --- */
+/** Phase 4: spawn N `bun run .output/server/index.mjs` processes with per-worker env. */
+function spawnPreviewServers(ctx: HostStackContext, workerCount: number): ChildProcess[] {
   const children: ChildProcess[] = []
-  function killAll(signal: NodeJS.Signals = 'SIGTERM'): void {
-    for (const child of children) {
-      if (!child.killed) {
-        try {
-          child.kill(signal)
-        } catch {
-          /* swallow */
-        }
-      }
-    }
-  }
-
-  process.on('SIGINT', () => {
-    console.log('\n[preview:test] SIGINT — killing all workers...')
-    killAll('SIGTERM')
-    setTimeout(() => process.exit(0), 1000)
-  })
-  process.on('SIGTERM', () => {
-    killAll('SIGTERM')
-    process.exit(0)
-  })
-
   for (let i = 1; i <= workerCount; i++) {
-    /* SAFETY: НЕ передаём process.env — buildTestServerEnv whitelist-only.
-     * См. host-stack/define-config.ts buildServerEnv для деталей. */
+    /* SAFETY: НЕ передаём process.env — buildTestServerEnv whitelist-only. */
     const env = ctx.buildTestServerEnv(i)
     const child = spawn('bun', ['run', '.output/server/index.mjs'], {
       env,
@@ -127,15 +99,43 @@ export async function runPreviewTest(ctx: HostStackContext): Promise<void> {
     })
     child.on('exit', (code, signal) => {
       console.error(`${prefix} exited (code=${String(code)} signal=${String(signal)})`)
-      killAll('SIGTERM')
+      killAll(children, 'SIGTERM')
       process.exit(code ?? 1)
     })
     children.push(child)
   }
-
   console.log(`[preview:test] spawned ${String(workerCount)} servers, waiting for health...`)
+  return children
+}
 
-  /* --- WAIT FOR ALL HEALTHY --- */
+/** Send signal to all children. Idempotent (skips already-killed). */
+function killAll(children: ChildProcess[], signal: NodeJS.Signals): void {
+  for (const child of children) {
+    if (!child.killed) {
+      try {
+        child.kill(signal)
+      } catch {
+        /* swallow */
+      }
+    }
+  }
+}
+
+/** Install SIGINT/SIGTERM handlers — graceful kill of children, then exit. */
+function installSignalHandlers(children: ChildProcess[]): void {
+  process.on('SIGINT', () => {
+    console.log('\n[preview:test] SIGINT — killing all workers...')
+    killAll(children, 'SIGTERM')
+    setTimeout(() => process.exit(0), 1000)
+  })
+  process.on('SIGTERM', () => {
+    killAll(children, 'SIGTERM')
+    process.exit(0)
+  })
+}
+
+/** Phase 5: poll /api/health/ready пока все workers не вернут 2xx. */
+async function waitForAllHealthy(ctx: HostStackContext, workerCount: number, children: ChildProcess[]): Promise<void> {
   const HEALTH_TIMEOUT_MS = 30_000
   const HEALTH_POLL_MS = 200
   const startedAt = Date.now()
@@ -143,8 +143,10 @@ export async function runPreviewTest(ctx: HostStackContext): Promise<void> {
 
   while (ready.size < workerCount) {
     if (Date.now() - startedAt > HEALTH_TIMEOUT_MS) {
-      console.error(`[preview:test] timeout waiting for healthcheck — ready=${[...ready].join(',')}`)
-      killAll('SIGTERM')
+      console.error(
+        `[preview:test] timeout waiting for healthcheck — ready=${[...ready].join(',') || '(none)'}`,
+      )
+      killAll(children, 'SIGTERM')
       process.exit(1)
     }
     for (let i = 1; i <= workerCount; i++) {
@@ -159,9 +161,9 @@ export async function runPreviewTest(ctx: HostStackContext): Promise<void> {
       await new Promise((r) => setTimeout(r, HEALTH_POLL_MS))
     }
   }
+}
 
-  console.log(`[preview:test] all ${String(workerCount)} workers ready. press Ctrl+C to stop.`)
-
-  /* Keep process alive — children собственными exit-handlers повалят нас. */
-  await new Promise(() => {})
+/** Phase 6: block forever — children's exit handlers will exit process. */
+function blockForever(): Promise<never> {
+  return new Promise<never>(() => {})
 }

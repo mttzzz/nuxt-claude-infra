@@ -1,126 +1,165 @@
 # @mttzzz/nuxt-claude-infra
 
-Per-session test infrastructure for Nuxt 4+ projects driven by [Claude Code](https://claude.com/claude-code). Lets multiple parallel Claude sessions in the same working tree run isolated docker test stacks without fighting over ports, container names, or temp files.
+Test infrastructure + Claude Code session hooks для Nuxt-проектов.
 
-What you get:
+## Что внутри
 
-- Per-session port registry (`.claude/sessions/<id>/ports.json`) with first-free allocation under a global lock.
-- One-line vitest / Playwright presets that bring up a per-session docker stack (`pgvector/pgvector:pg18` + `redis:7-alpine` + your test image) and tear it down on session end.
-- Long-running per-session Nuxt MCP server on its own port, for Playwright MCP and manual debugging against the dev DB.
-- Globally-installed Claude Code hooks (PreToolUse / PostToolUse / SessionStart / SessionEnd) that activate only inside infra projects (no-op elsewhere).
-- CLI binaries (`nci-*`) for ports, stack lifecycle, scoped commits, and zombie-process cleanup.
+### `host-stack` — параллельный test-стек
 
-## Install
+Per-worker DB (`{dbBase}_w{1..N}`) + N preview-серверов параллельно (port `portBase+1..portBase+N`).
+Каждый worker полностью изолирован: своя БД, свой Redis db, свой порт. Тестовый прогон масштабируется ×N.
 
-```sh
-bun add -D @mttzzz/nuxt-claude-infra
-# or
-npm i -D @mttzzz/nuxt-claude-infra
-```
+**Архитектура:**
 
-For the global hooks + CLI binaries (one machine-wide install, all projects share it):
+1. `bun preview:test` (foreground в отдельном терминале):
+   - Hash inputs (`server/`, `app/`, `shared/`, `modules/` + key configs) → если изменилось, `bun nuxt build`
+   - `ensureTestDb` worker 1 + `drizzle-kit migrate`
+   - Клон в worker 2..N через `CREATE DATABASE TEMPLATE` (быстро vs N×migrate)
+   - Spawn N процессов `bun run .output/server/index.mjs` с per-worker env (port, POSTGRES_URL, REDIS_DB)
+   - Wait for all `/api/health/ready` → READY
 
-```sh
-bun install -g @mttzzz/nuxt-claude-infra
-```
+2. `bun test:integration` (или e2e) — другой терминал:
+   - vitest globalSetup → `ensureTestStack` (повторно проверяет health, миграции через hash-cache no-op)
+   - Per-fork `setupFiles` → выставляет `NUXT_TEST_HOST` по `VITEST_POOL_ID` (modulo на N)
+   - Каждый fork целится в свой preview-сервер + свою БД (через `resolveWorkerId`)
 
-## Quick start
+**Безопасность (важно):** `buildTestServerEnv` НЕ пробрасывает `process.env` — иначе тесты могут случайно
+слать реальные емейлы через прод Resend / Telegram / etc. Test-сервер получает только:
+- safe system vars (PATH, HOME, SHELL, TZ)
+- dummy NUXT_* из `.env.test` проекта
+- per-worker DB / port / Redis db
+- осознанный `envWhitelist` (например, для read-only внутренних API)
 
-### `vitest.config.ts`
+См. `src/host-stack/define-config.ts:buildServerEnv` + tests `host-stack-server-env.test.ts`.
 
-```ts
-import { defineVitestPreset } from '@mttzzz/nuxt-claude-infra/configs/vitest'
+### Quick start
 
-export default defineVitestPreset()
-```
-
-Creates three vitest projects (`unit`, `component`, `integration`). The integration project's `globalSetup` brings up the per-session docker stack and exposes its host via `NUXT_TEST_HOST`.
-
-### `playwright.config.ts`
+5 файлов в проекте, ~25 строк всего:
 
 ```ts
-import { definePlaywrightPreset } from '@mttzzz/nuxt-claude-infra/configs/playwright'
-
-export default definePlaywrightPreset()
-```
-
-Same lifecycle as the vitest preset — stack starts in `globalSetup`, tears down in `globalTeardown`.
-
-### `docker-compose.test.yml`
-
-Include the bundled template and add only project-specific env:
-
-```yaml
-include:
-  - path: ./node_modules/@mttzzz/nuxt-claude-infra/templates/docker-compose.test.yml
-services:
-  test-server:
-    environment:
-      MY_PROJECT_FLAG: '1'
-```
-
-The template provides `postgres-test` (pgvector/pg18, tmpfs), `redis-test`, and a `test-server` that boots from your built image. Requires Docker Compose v2.20+ for `include:`.
-
-### Programmatic stack control
-
-```ts
-import { defineTestStack } from '@mttzzz/nuxt-claude-infra'
-
-const stack = defineTestStack({
-  disconnectDb: async () => {
-    /* project-side teardown, e.g. drizzle pool close */
-  },
+// scripts/test-host-stack/config.ts
+import { defineHostStackConfig } from '@mttzzz/nuxt-claude-infra/host-stack'
+export const hostStack = defineHostStackConfig({
+  dbBase: 'my_app_test',
+  portBase: 3100,
+  redisDbBase: 10,
+  envWhitelist: ['NUXT_INTERNAL_API_SECRET'], // optional
 })
 
-const handle = await stack.start()
-// handle.host = "http://127.0.0.1:3210"
-// handle.ports / handle.sessionId
-await stack.stop()
+// scripts/test-host-stack/preview-test.ts
+import { runPreviewTest } from '@mttzzz/nuxt-claude-infra/host-stack'
+import { hostStack } from './config'
+await runPreviewTest(hostStack)
+
+// test/helpers/db.ts
+import { createTestDb } from '@mttzzz/nuxt-claude-infra/host-stack/db'
+import type { drizzle } from 'drizzle-orm/postgres-js'
+import { hostStack } from '~~/scripts/test-host-stack/config'
+import { relations } from '~~/server/db/relations'
+import * as schema from '~~/server/db/schema'
+
+type DB = ReturnType<typeof drizzle<typeof schema, typeof relations>>
+export const { testDb, truncateAll, disconnectTestDb } = createTestDb<DB>({
+  ctx: hostStack,
+  schema,
+  relations,
+  tables: ['users', 'companies', /* ... */] as const,
+})
+
+// test/helpers/use-shared-nuxt.ts
+import { setup } from '@nuxt/test-utils/e2e'
+import { createUseSharedNuxt } from '@mttzzz/nuxt-claude-infra/host-stack'
+export const useSharedNuxt = createUseSharedNuxt(setup)
+
+// test/setup/{vitest-global-setup, integration-fork-init, playwright-global-setup}.ts
+// каждый — 3 строки: импорт + дефолт-экспорт create*Setup(hostStack)
+
+// test/e2e/fixtures.ts (per-worker host)
+import { expect, test as base } from '@nuxt/test-utils/playwright'
+import { hostStack } from '~~/scripts/test-host-stack/config'
+
+export const test = base.extend({
+  nuxt: [
+    async ({}, use, workerInfo) => {
+      const workerId = workerInfo.parallelIndex + 1
+      const host = hostStack.testServerUrl(workerId)
+      process.env.NUXT_TEST_HOST = host
+      await use({ host, browser: true, setupTimeout: 60_000 })
+    },
+    { scope: 'worker' },
+  ],
+})
+export { expect }
 ```
 
-`startTestStack` is idempotent and pings `/api/health/ready` on stale handles (3s timeout) — if a previous session crashed without cleanup, the dead handle is removed and a fresh stack comes up.
+**vitest.config.ts** integration project:
 
-## CLI
-
-After global install (or via project `node_modules/.bin`):
-
-| Binary | Purpose |
-|---|---|
-| `nci-mcp-url` | Print the MCP server URL for the current session |
-| `nci-mcp-server` | Start the per-session Nuxt MCP server on its allocated port |
-| `nci-stack-ls` | List active per-session stacks |
-| `nci-stack-kill <sessionId>` | Force-teardown a session's stack |
-| `nci-stack-prune` | Remove session dirs without a live `by-harness/<pid>` link |
-| `nci-kill-zombies` | Kill leftover `nuxi _dev` / `tinypool` / Playwright test-server processes |
-| `nci-mine` | List files touched by the current session (diagnostic) |
-| `nci-commit-files "<msg>" <files...>` | Commit only the listed files (parallel-session-safe) |
-
-## Configuration
-
-Most defaults are derived from the project directory name (e.g. `shop.example.com` → docker prefix `shop-example-test`, test DB `shop_example_test`, ports allocated from the standard ranges). Override only when convention doesn't fit:
-
-```json
-// .claude-infra.json
+```ts
 {
-  "dockerProjectPrefix": "my-test",
-  "testDbName": "my_test"
+  name: 'integration',
+  environment: 'node',
+  include: ['test/integration/**/*.test.ts'],
+  globalSetup: ['./test/setup/vitest-global-setup.ts'],
+  setupFiles: ['./test/setup/integration-fork-init.ts'],
+  pool: 'forks',
+  maxWorkers: 4,
+  fileParallelism: true,
+  isolate: false,
+  hookTimeout: 180_000,
+  testTimeout: 30_000,
 }
 ```
 
-Standard ranges:
+**playwright.config.ts:**
 
-- MCP per-session: `3100–3199`
-- test-server: `3200–3299`
-- postgres-test: `3310–3399`
-- redis-test: `6400–6499`
+```ts
+{
+  workers: 4,
+  fullyParallel: false, // file-level batching экономит browser contexts
+  globalSetup: './test/setup/playwright-global-setup.ts',
+}
+```
 
-## Architecture (brief)
+**package.json:**
 
-- **Three environments per session.** Shared dev server (3001), per-session MCP server (3100-range, dev DB), per-session test stack (docker, tmpfs DB, dummy secrets).
-- **Session resolution.** Reads `CLAUDE_SESSION_ID` env, otherwise walks up `ppid` to the Claude harness process and reads `.claude/sessions/by-harness/<pid>.json` written by the SessionStart hook.
-- **Port registry.** First free port from each range, persisted in `.claude/sessions/<id>/ports.json`. Lock-protected so parallel `allocateSessionPorts` calls don't collide.
-- **Hook gating.** Hooks short-circuit on projects without `.claude-infra.json` and without `@mttzzz/nuxt-claude-infra` in `package.json`, so installing them globally is safe.
+```json
+"preview:test": "infisical run --env=dev -- bun scripts/test-host-stack/preview-test.ts"
+```
 
-## License
+### Запуск
 
-MIT.
+```bash
+# Терминал 1: спавнит 4 preview-сервера
+bun preview:test
+
+# Терминал 2: тесты идут параллельно
+bun test:integration   # 4 forks × per-worker DB
+bun test:e2e           # 4 playwright workers × per-worker host
+```
+
+Сменить число workers: `TEST_WORKERS=8 bun preview:test` (и тестовая команда тем же).
+
+### Peer dependencies
+
+- `drizzle-orm` ^1.0 (для `createTestDb`)
+- `@nuxt/test-utils` ^4.0 (для setup factories + `createUseSharedNuxt`)
+- `vitest` ^4.0 (для setup factories)
+- `zod` ^4.0 (для config schema)
+
+Все optional — нужны только если используешь соответствующий subpath.
+
+## CLI binaries
+
+- `nci-commit-files <message> <files...>` — git commit с явным списком файлов (защита от
+  parallel-session race в одной ветке)
+- `nci-kill-zombies` — прибирает зомби-процессы node/bun/chrome после тестов
+
+## Claude Code hooks
+
+- `nci-hook-session-start`, `nci-hook-session-end`, `nci-hook-pre-tool-use`, `nci-hook-post-tool-use`
+
+Прописываются в `~/.claude/settings.json` для отслеживания Claude session lifecycle.
+
+## Migration from v0.7
+
+См. [CHANGELOG.md](./CHANGELOG.md).

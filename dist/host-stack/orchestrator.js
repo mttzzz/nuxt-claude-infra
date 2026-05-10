@@ -139,9 +139,11 @@ export async function ensureTestStack(ctx, opts = {}) {
         migrationsDir: ctx.options.migrationsDir,
         cachePath: ctx.migrationsHashFile,
     });
-    /* Вторичные workers — клонируем primary через CREATE DATABASE TEMPLATE. */
+    /* Вторичные workers — клонируем primary через CREATE DATABASE TEMPLATE.
+     * verbose:false — этот path вызывается из vitest/playwright globalSetup на каждом прогоне,
+     * не хотим засирать вывод. preview-test использует verbose:true. */
     if (workerCount > 1) {
-        await ensureSecondaryDbsFromPrimary(ctx, workerCount, !migration.skipped);
+        await ensureSecondaryDbsFromPrimary(ctx, workerCount, !migration.skipped, false);
     }
     const hosts = [];
     hosts[0] = '';
@@ -161,10 +163,13 @@ export async function ensureTestStack(ctx, opts = {}) {
 }
 /**
  * Создаёт вторичные test-БД (worker 2..N) клонированием primary через CREATE DATABASE TEMPLATE.
- * Force=true → DROP+CREATE. Force=false → пропускает существующие.
+ * - force=true → DROP+CREATE даже если БД существует (для свежей миграции).
+ * - force=false → пропускает существующие.
  * TEMPLATE требует чтобы в primary не было активных коннектов — закрываем их.
+ *
+ * Verbose=true печатает прогресс (используется preview-test); false для тихих re-checks из globalSetup.
  */
-export async function ensureSecondaryDbsFromPrimary(ctx, workerCount, force) {
+export async function ensureSecondaryDbsFromPrimary(ctx, workerCount, force, verbose = true) {
     const sql = postgres(ctx.testAdminPostgresUrl(), { max: 1, onnotice: () => { } });
     const primary = ctx.testDbName(1);
     try {
@@ -179,14 +184,25 @@ export async function ensureSecondaryDbsFromPrimary(ctx, workerCount, force) {
             if (exists[0]?.exists && !force)
                 continue;
             if (exists[0]?.exists) {
-                await sql.unsafe(`SELECT pg_terminate_backend(pid) FROM pg_stat_activity WHERE datname='${db}' AND pid<>pg_backend_pid()`);
+                await terminateConnections(sql, db);
                 await sql.unsafe(`DROP DATABASE "${db}"`);
             }
-            await sql.unsafe(`SELECT pg_terminate_backend(pid) FROM pg_stat_activity WHERE datname='${primary}' AND pid<>pg_backend_pid()`);
+            await terminateConnections(sql, primary);
             await sql.unsafe(`CREATE DATABASE "${db}" TEMPLATE "${primary}"`);
+            if (verbose) {
+                /* eslint-disable-next-line no-console */
+                console.log(`[preview:test] cloned ${primary} → ${db}`);
+            }
         }
     }
     finally {
         await sql.end({ timeout: 5 });
     }
+}
+/** TEMPLATE и DROP DATABASE требуют отсутствия активных подключений — terminate их. */
+async function terminateConnections(sql, database) {
+    if (!/^[a-zA-Z0-9_]+$/.test(database)) {
+        throw new Error(`terminateConnections: невалидное имя БД "${database}"`);
+    }
+    await sql.unsafe(`SELECT pg_terminate_backend(pid) FROM pg_stat_activity WHERE datname='${database}' AND pid<>pg_backend_pid()`);
 }

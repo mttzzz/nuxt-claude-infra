@@ -26,6 +26,10 @@
       "types": "./dist/host-stack/index.d.ts",
       "default": "./dist/host-stack/index.js"
     },
+    "./host-stack/db": {
+      "types": "./dist/host-stack/db.d.ts",
+      "default": "./dist/host-stack/db.js"
+    },
     "./host-stack/setup": {
       "types": "./dist/host-stack/setup/index.d.ts",
       "default": "./dist/host-stack/setup/index.js"

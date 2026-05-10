@@ -42,8 +42,11 @@ export declare function ensureTestStack(ctx: HostStackContext, opts?: {
 }): Promise<EnsureStackResult>;
 /**
  * Создаёт вторичные test-БД (worker 2..N) клонированием primary через CREATE DATABASE TEMPLATE.
- * Force=true → DROP+CREATE. Force=false → пропускает существующие.
+ * - force=true → DROP+CREATE даже если БД существует (для свежей миграции).
+ * - force=false → пропускает существующие.
  * TEMPLATE требует чтобы в primary не было активных коннектов — закрываем их.
+ *
+ * Verbose=true печатает прогресс (используется preview-test); false для тихих re-checks из globalSetup.
  */
-export declare function ensureSecondaryDbsFromPrimary(ctx: HostStackContext, workerCount: number, force: boolean): Promise<void>;
+export declare function ensureSecondaryDbsFromPrimary(ctx: HostStackContext, workerCount: number, force: boolean, verbose?: boolean): Promise<void>;
 //# sourceMappingURL=orchestrator.d.ts.map
