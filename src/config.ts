@@ -71,7 +71,9 @@ const DEFAULT_PORTS = {
 const DEFAULT_PATHS = {
   dockerCompose: 'docker-compose.test.yml',
   sessionsDir: '.claude/sessions',
-  playwrightArtifactsDir: '.playwright-mcp',
+  /* Все временные артефакты (Playwright MCP, test-results, scratch) — под /.tmp/ в корне проекта.
+     Старая convention .playwright-mcp/ заменена для консистентности с другими временными папками. */
+  playwrightArtifactsDir: '.tmp/playwright-mcp',
 }
 
 const DEFAULT_KILL_ZOMBIES_PATTERNS = [

@@ -18,6 +18,6 @@ export function definePlaywrightPreset(opts = {}) {
         projects: opts.projects ?? [
             { name: 'chromium', use: { browserName: 'chromium' } },
         ],
-        outputDir: '.playwright-mcp/test-results',
+        outputDir: '.tmp/test-results',
     };
 }
