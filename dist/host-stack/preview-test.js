@@ -111,7 +111,9 @@ function installSignalHandlers(children) {
 }
 /** Phase 5: poll /api/health/ready пока все workers не вернут 2xx. */
 async function waitForAllHealthy(ctx, workerCount, children) {
-    const HEALTH_TIMEOUT_MS = 30_000;
+    /* Cold start с Sentry + Bull queues + Redis subscribe легко превышает 30s особенно
+       после bun nuxt build с большим bundle. 90s — комфортный буфер. POLL_MS 200ms прежний. */
+    const HEALTH_TIMEOUT_MS = 90_000;
     const HEALTH_POLL_MS = 200;
     const startedAt = Date.now();
     const ready = new Set();
@@ -124,7 +126,8 @@ async function waitForAllHealthy(ctx, workerCount, children) {
         for (let i = 1; i <= workerCount; i++) {
             if (ready.has(i))
                 continue;
-            const alive = await isServerAlive(ctx.testServerUrl(i), 1500);
+            /* 5s per-probe: bootstrap initial requests медленные пока caches холодные, GC активный. */
+            const alive = await isServerAlive(ctx.testServerUrl(i), 5000);
             if (alive) {
                 ready.add(i);
                 console.log(`[preview:test] worker ${String(i)} ready @ ${ctx.testServerUrl(i)} (DB ${ctx.testDbName(i)})`);
