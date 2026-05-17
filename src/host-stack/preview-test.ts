@@ -56,7 +56,12 @@ function ensureBuildArtifact(ctx: HostStackContext): void {
 
   const reason = !outputExists ? 'no .output/' : `hash changed ${cached ?? '(none)'} → ${newHash}`
   console.log(`[preview:test] building production bundle (${reason})...`)
-  const buildResult = spawnSync('bun', ['nuxt', 'build'], { stdio: 'inherit' })
+  /* SECURITY: явный `env: process.env` — Bun-quirk, без этого child НЕ inherit-ит
+     родительский override (parent ставит process.env.NUXT_RESEND_API_KEY='dummy' через
+     .env.test, child видит инжектированный родителем `infisical run --env=dev` real key
+     → запекает в `.output/server/index.mjs` через Nuxt runtimeConfig). Postmortem:
+     https://github.com/mttzzz/nuxt-claude-infra/issues/resend-leak-2026-05 */
+  const buildResult = spawnSync('bun', ['nuxt', 'build'], { stdio: 'inherit', env: process.env })
   if (buildResult.status !== 0) {
     console.error('[preview:test] build failed')
     process.exit(buildResult.status ?? 1)
