@@ -16,6 +16,7 @@
  */
 import { existsSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
+import { applyEnvOverrides } from './env-overrides.js';
 const DEFAULTS = {
     redisDbBase: 0,
     redisHost: '127.0.0.1',
@@ -54,6 +55,7 @@ export function defineHostStackConfig(opts) {
         stateDir: opts.stateDir ?? DEFAULTS.stateDir,
         rootDir: opts.rootDir ?? process.cwd(),
     };
+    applyEnvOverrides(o);
     const buildPostgresUrl = (database) => {
         const auth = o.dbPassword
             ? `${encodeURIComponent(o.dbUser)}:${encodeURIComponent(o.dbPassword)}`
@@ -99,8 +101,20 @@ function loadEnvTest(rootDir) {
     }
     return out;
 }
-/* Список НЕ-NUXT системных vars пропускаемых из process.env. Без секретов. */
-const SAFE_SYSTEM_ENV_KEYS = ['PATH', 'HOME', 'USER', 'SHELL', 'LANG', 'LC_ALL', 'TERM', 'TZ'];
+/* Список НЕ-NUXT системных vars пропускаемых из process.env. Без секретов.
+ * PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH — путь до системного chromium: внутри дорожки браузер
+ * лежит в образе, и server-код (html→pdf) обязан его найти. */
+const SAFE_SYSTEM_ENV_KEYS = [
+    'PATH',
+    'HOME',
+    'USER',
+    'SHELL',
+    'LANG',
+    'LC_ALL',
+    'TERM',
+    'TZ',
+    'PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH',
+];
 function buildServerEnv(ctx, workerId) {
     const o = ctx.options;
     const dummyEnv = loadEnvTest(o.rootDir);

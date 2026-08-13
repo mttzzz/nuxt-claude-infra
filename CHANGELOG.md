@@ -1,5 +1,24 @@
 # Changelog
 
+## v2.1.0 — HOSTSTACK_* env overrides (дорожки/lanes)
+
+Тесты проекта теперь могут идти внутри контейнера дорожки, где Postgres общий и живёт по
+DNS-имени сервиса, а Redis свой в namespace. Чтобы не править `scripts/test-host-stack/config.ts`
+в каждом проекте, инфраструктурная часть опций переопределяется из окружения.
+
+### Added
+
+- `src/host-stack/env-overrides.ts` — `applyEnvOverrides(o)`, вызывается в `defineHostStackConfig`
+  сразу после сборки опций. Читает `HOSTSTACK_DB_BASE`, `HOSTSTACK_DB_HOST`, `HOSTSTACK_DB_PORT`,
+  `HOSTSTACK_DB_USER`, `HOSTSTACK_DB_PASSWORD`, `HOSTSTACK_REDIS_HOST`, `HOSTSTACK_REDIS_PORT`,
+  `HOSTSTACK_REDIS_PASSWORD`, `HOSTSTACK_REDIS_DB_BASE`. Отсутствующая переменная не трогает
+  значение, нечисловой порт — `throw`. Вне дорожки переменных нет и поведение прежнее.
+- `PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH` в `SAFE_SYSTEM_ENV_KEYS`: server-код (html→pdf) внутри
+  контейнера должен найти системный chromium.
+
+Порты preview-серверов не переопределяются: у контейнера свой сетевой namespace, поэтому
+`portBase + workerId` приватен и одинаков у всех дорожек.
+
 ## v2.0.0 — drop bins / hooks / cli, pure TypeScript devDep
 
 **BREAKING.** Пакет больше не содержит CLI-бинарников и Claude session hooks —

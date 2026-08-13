@@ -17,6 +17,7 @@
 
 import { existsSync, readFileSync } from 'node:fs'
 import { join } from 'node:path'
+import { applyEnvOverrides } from './env-overrides.js'
 
 export interface HostStackOptions {
   /** Базовое имя test-БД (БЕЗ суффикса _w{N}). Пример: 'ai_pushka_biz_test'. */
@@ -131,6 +132,7 @@ export function defineHostStackConfig(opts: HostStackOptions): HostStackContext 
     stateDir: opts.stateDir ?? DEFAULTS.stateDir,
     rootDir: opts.rootDir ?? process.cwd(),
   }
+  applyEnvOverrides(o)
 
   const buildPostgresUrl = (database: string): string => {
     const auth = o.dbPassword
@@ -177,8 +179,20 @@ function loadEnvTest(rootDir: string): Record<string, string> {
   return out
 }
 
-/* Список НЕ-NUXT системных vars пропускаемых из process.env. Без секретов. */
-const SAFE_SYSTEM_ENV_KEYS = ['PATH', 'HOME', 'USER', 'SHELL', 'LANG', 'LC_ALL', 'TERM', 'TZ'] as const
+/* Список НЕ-NUXT системных vars пропускаемых из process.env. Без секретов.
+ * PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH — путь до системного chromium: внутри дорожки браузер
+ * лежит в образе, и server-код (html→pdf) обязан его найти. */
+const SAFE_SYSTEM_ENV_KEYS = [
+  'PATH',
+  'HOME',
+  'USER',
+  'SHELL',
+  'LANG',
+  'LC_ALL',
+  'TERM',
+  'TZ',
+  'PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH',
+] as const
 
 function buildServerEnv(ctx: HostStackContext, workerId: number): Record<string, string> {
   const o = ctx.options
