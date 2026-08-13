@@ -194,6 +194,26 @@ const SAFE_SYSTEM_ENV_KEYS = [
   'PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH',
 ] as const
 
+function parseServerEnvJson(): Record<string, string> {
+  const raw = process.env.HOSTSTACK_SERVER_ENV_JSON
+  if (raw === undefined || raw.trim() === '') return {}
+  let parsed: unknown
+  try {
+    parsed = JSON.parse(raw)
+  } catch {
+    throw new Error('HOSTSTACK_SERVER_ENV_JSON: невалидный JSON')
+  }
+  if (typeof parsed !== 'object' || parsed === null || Array.isArray(parsed)) {
+    throw new Error('HOSTSTACK_SERVER_ENV_JSON: ожидался объект { KEY: "value" }')
+  }
+  const out: Record<string, string> = {}
+  for (const [key, value] of Object.entries(parsed)) {
+    if (typeof value !== 'string') throw new Error(`HOSTSTACK_SERVER_ENV_JSON: ${key} — не строка`)
+    out[key] = value
+  }
+  return out
+}
+
 function buildServerEnv(ctx: HostStackContext, workerId: number): Record<string, string> {
   const o = ctx.options
   const dummyEnv = loadEnvTest(o.rootDir)
@@ -211,12 +231,20 @@ function buildServerEnv(ctx: HostStackContext, workerId: number): Record<string,
     if (v) whitelist[key] = v
   }
 
+  /* Инфраструктура, которую подкладывает окружение (внутри дорожки — её MinIO и прочее):
+   * достаётся ТОЛЬКО preview-серверам. Через process.env её пробрасывать нельзя — те же
+   * переменные увидели бы unit-тесты в том же контейнере и ушли бы в реальный S3 вместо
+   * in-memory заглушки. Вне дорожки переменной нет и поведение прежнее. */
+  const injected = parseServerEnvJson()
+
   return {
     ...safeBase,
     /* Dummy NUXT_* + связанные из .env.test (NUXT_RESEND_API_KEY=dummy, NUXT_TELEGRAM_*, etc.). */
     ...dummyEnv,
     /* Explicit project-side whitelist. */
     ...whitelist,
+    /* HOSTSTACK_SERVER_ENV_JSON. */
+    ...injected,
     /* Per-worker overrides — DB, port, Redis db. Перетирают всё выше. */
     PORT: String(ctx.testServerPort(workerId)),
     POSTGRES_URL: ctx.testPostgresUrl(workerId),

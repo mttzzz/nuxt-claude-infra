@@ -1,5 +1,16 @@
 # Changelog
 
+## v2.2.0 — HOSTSTACK_SERVER_ENV_JSON
+
+### Added
+
+- `HOSTSTACK_SERVER_ENV_JSON` — JSON-объект `{ KEY: "value" }`, который `buildServerEnv`
+  подмешивает **только** в окружение preview-серверов (после `.env.test` и `envWhitelist`,
+  до per-worker overrides). Нужен для инфраструктуры, которую даёт окружение, а не проект:
+  внутри дорожки это S3 её namespace (MinIO). Через `process.env` такие переменные
+  пробрасывать нельзя — их увидели бы unit-тесты в том же контейнере и пошли бы в реальный
+  S3 вместо in-memory заглушки. Невалидный JSON или не-строковое значение — `throw`.
+
 ## v2.1.0 — HOSTSTACK_* env overrides (дорожки/lanes)
 
 Тесты проекта теперь могут идти внутри контейнера дорожки, где Postgres общий и живёт по

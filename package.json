@@ -1,8 +1,8 @@
 {
   "name": "@mttzzz/nuxt-claude-infra",
-  "version": "2.1.0",
+  "version": "2.2.0",
   "type": "module",
-  "description": "Host-stack test infra for Nuxt projects: per-worker DB + N parallel preview-серверов. Pure TypeScript devDep, no bins.",
+  "description": "Host-stack test infra for Nuxt projects: per-worker DB + N parallel preview-\u0441\u0435\u0440\u0432\u0435\u0440\u043e\u0432. Pure TypeScript devDep, no bins.",
   "license": "MIT",
   "publishConfig": {
     "access": "public"
