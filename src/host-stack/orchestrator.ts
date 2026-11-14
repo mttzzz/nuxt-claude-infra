@@ -12,6 +12,7 @@ import { existsSync, mkdirSync, readdirSync, readFileSync, statSync, writeFileSy
 import { dirname, join } from 'node:path'
 
 import postgres from 'postgres'
+import type { Sql } from 'postgres'
 
 import type { HostStackContext } from './define-config.js'
 
@@ -244,7 +245,7 @@ export async function ensureSecondaryDbsFromPrimary(
 }
 
 /** TEMPLATE и DROP DATABASE требуют отсутствия активных подключений — terminate их. */
-async function terminateConnections(sql: postgres.Sql, database: string): Promise<void> {
+async function terminateConnections(sql: Sql, database: string): Promise<void> {
   if (!/^[a-zA-Z0-9_]+$/.test(database)) {
     throw new Error(`terminateConnections: невалидное имя БД "${database}"`)
   }

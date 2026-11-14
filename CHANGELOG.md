@@ -1,5 +1,39 @@
 # Changelog
 
+## v3.0.0 — postgres: peerDependency ^4.1.1
+
+**BREAKING.** Драйвер `postgres` (postgres-js) больше не зависимость пакета, а peer: `^4.1.1`.
+
+Раньше пакет тянул свой `postgres ^3.4.7`. Проект на postgres-js 4 получал вторую, вложенную копию
+(3.4.9 в `node_modules/@mttzzz/nuxt-claude-infra/node_modules/postgres`): typecheck видел два разных `Sql`,
+а тест-стек (`ensureTestDb`, `createTestDb`) работал на 3.4.9 — версии с багом porsager/postgres#1249
+(после обрыва соединения следующий запрос отклоняется устаревшей ошибкой). Теперь копия одна — проектная,
+вложенного драйвера у пакета больше нет.
+
+### Changed
+
+- `postgres` переехал из `dependencies` в `peerDependencies` (`^4.1.1`, обязательный: его импортируют
+  `host-stack` и `host-stack/db`) и в `devDependencies` (`4.1.1`, только для сборки и типов самого пакета).
+  Runtime-зависимостей у пакета больше нет.
+- `createTestDb({ createInstance })`: `client` типизирован именованным `Sql` из `postgres` v4
+  (`import type { Sql }`), а не `postgres.Sql` из `export =` v3.
+
+### Без изменений
+
+Код хелперов совместим с postgres-js 4 как есть: опции клиента (`max`, `prepare: false`, `onnotice`),
+`unsafe` и `end({ timeout })` те же, а единственные параметры запросов — строки (`datname = ${name}`),
+поэтому «типы параметров решает сервер» (v4, `infer: false`) их не затрагивает. `sql.array()` пакет не
+использовал. Проверено на реальном Postgres 18 в bun и node: `ensureTestDb` идемпотентен,
+`ensureSecondaryDbsFromPrimary` клонирует через `TEMPLATE`, `truncateAll` и `disconnectTestDb` работают.
+
+### Migration from v2.x
+
+В проекте:
+1. `postgres` в `dependencies` проекта — `^4.1.1` (проекты на 3.x остаются на `@mttzzz/nuxt-claude-infra` ^2.2.0).
+2. `@mttzzz/nuxt-claude-infra` → `^3.0.0`.
+3. Убрать `overrides.postgres` (`resolutions.postgres`), если он нужен был только чтобы загнать вложенную
+   копию пакета на v4: после обновления в дереве и так один `postgres`.
+
 ## v2.2.0 — HOSTSTACK_SERVER_ENV_JSON
 
 ### Added

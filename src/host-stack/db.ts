@@ -20,6 +20,7 @@
  * testDb() возвращает drizzle instance с корректными типами выведенными из schema/relations проекта. */
 
 import postgres from 'postgres'
+import type { Sql } from 'postgres'
 
 import type { HostStackContext } from './define-config.js'
 import { resolveWorkerId } from './helpers/worker-id.js'
@@ -28,7 +29,7 @@ export interface CreateTestDbOptions<TInstance> {
   ctx: HostStackContext
   /** Фабрика drizzle instance — получает postgres-js client, возвращает типизированный drizzle.
    * Пример: `(client) => drizzle({ client, schema, relations, casing: 'snake_case' })` */
-  createInstance: (client: postgres.Sql) => TInstance
+  createInstance: (client: Sql) => TInstance
   /** TRUNCATE-list — все таблицы для сброса в beforeEach. Системная __drizzle_migrations НЕ трогается. */
   tables: readonly string[]
   /** Postgres pool max connections (default 10). */
@@ -45,7 +46,7 @@ export interface TestDbHelpers<TInstance> {
 }
 
 export function createTestDb<TInstance>(opts: CreateTestDbOptions<TInstance>): TestDbHelpers<TInstance> {
-  let client: postgres.Sql | null = null
+  let client: Sql | null = null
   let instance: TInstance | null = null
 
   function testDb(): TInstance {

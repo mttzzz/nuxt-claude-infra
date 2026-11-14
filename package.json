@@ -1,6 +1,6 @@
 {
   "name": "@mttzzz/nuxt-claude-infra",
-  "version": "2.2.0",
+  "version": "3.0.0",
   "type": "module",
   "description": "Host-stack test infra for Nuxt projects: per-worker DB + N parallel preview-\u0441\u0435\u0440\u0432\u0435\u0440\u043e\u0432. Pure TypeScript devDep, no bins.",
   "license": "MIT",
@@ -39,6 +39,7 @@
   },
   "peerDependencies": {
     "@nuxt/test-utils": "^4.0.3",
+    "postgres": "^4.1.1",
     "vitest": "^4.0.0"
   },
   "peerDependenciesMeta": {
@@ -49,12 +50,10 @@
       "optional": true
     }
   },
-  "dependencies": {
-    "postgres": "^3.4.7"
-  },
   "devDependencies": {
     "@types/bun": "latest",
     "@types/node": "^22.0.0",
+    "postgres": "4.1.1",
     "typescript": "^5.6.0"
   },
   "files": [

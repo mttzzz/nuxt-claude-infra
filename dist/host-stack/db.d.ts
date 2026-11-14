@@ -1,10 +1,10 @@
-import postgres from 'postgres';
+import type { Sql } from 'postgres';
 import type { HostStackContext } from './define-config.js';
 export interface CreateTestDbOptions<TInstance> {
     ctx: HostStackContext;
     /** Фабрика drizzle instance — получает postgres-js client, возвращает типизированный drizzle.
      * Пример: `(client) => drizzle({ client, schema, relations, casing: 'snake_case' })` */
-    createInstance: (client: postgres.Sql) => TInstance;
+    createInstance: (client: Sql) => TInstance;
     /** TRUNCATE-list — все таблицы для сброса в beforeEach. Системная __drizzle_migrations НЕ трогается. */
     tables: readonly string[];
     /** Postgres pool max connections (default 10). */

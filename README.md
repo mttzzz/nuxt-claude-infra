@@ -141,11 +141,15 @@ bun test:e2e           # 4 playwright workers × per-worker host
 
 ### Peer dependencies
 
+- `postgres` ^4.1.1 — **обязательный** (с v3.0.0). Драйвер test-хелперов (`ensureTestDb`, `ensureTestStack`,
+  `createTestDb`). Пакет не тянет свою копию, а берёт ту, что стоит у проекта: в дереве ровно один `postgres`,
+  и `Sql`, который получает `createInstance(client)`, — тот самый тип, что ждёт `drizzle-orm/postgres-js`.
+  Проекты на postgres-js 3.x остаются на `@mttzzz/nuxt-claude-infra` ^2.
 - `@nuxt/test-utils` ^4.0 (для setup factories)
 - `vitest` ^4.0 (для setup factories)
-- `drizzle-orm` ^1.0 + `postgres` (для `createTestDb`) — провайдится консьюмером
+- `drizzle-orm` ^1.0 (для `createTestDb`) — провайдится консьюмером
 
-Все optional — нужны только если используешь соответствующий subpath.
+`@nuxt/test-utils` и `vitest` — optional: нужны только если используешь соответствующий subpath.
 
 ## v2.0 — pure TypeScript devDep
 

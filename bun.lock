@@ -4,16 +4,15 @@
   "workspaces": {
     "": {
       "name": "@mttzzz/nuxt-claude-infra",
-      "dependencies": {
-        "postgres": "^3.4.7",
-      },
       "devDependencies": {
         "@types/bun": "latest",
         "@types/node": "^22.0.0",
+        "postgres": "4.1.1",
         "typescript": "^5.6.0",
       },
       "peerDependencies": {
         "@nuxt/test-utils": "^4.0.3",
+        "postgres": "^4.1.1",
         "vitest": "^4.0.0",
       },
       "optionalPeers": [
@@ -29,7 +28,7 @@
 
     "bun-types": ["bun-types@1.3.13", "", { "dependencies": { "@types/node": "*" } }, "sha512-QXKeHLlOLqQX9LgYaHJfzdBaV21T63HhFJnvuRCcjZiaUDpbs5ED1MgxbMra71CsryN/1dAoXuJJJwIv/2drVA=="],
 
-    "postgres": ["postgres@3.4.9", "", {}, "sha512-GD3qdB0x1z9xgFI6cdRD6xu2Sp2WCOEoe3mtnyB5Ee0XrrL5Pe+e4CCnJrRMnL1zYtRDZmQQVbvOttLnKDLnaw=="],
+    "postgres": ["postgres@4.1.1", "", {}, "sha512-1kJDojqNZC+iTHHXh6eif0J98LUtyLAePe/qkW1GK35eh2JixlsAiIKq3FGI+xqI+SUGTNodzf7TScVeIIyUug=="],
 
     "typescript": ["typescript@5.9.3", "", { "bin": { "tsc": "bin/tsc", "tsserver": "bin/tsserver" } }, "sha512-jl1vZzPDinLr9eUt3J/t7V6FgNEw9QjvBPdysz9KfQDD41fQrC2Y4vKQdiaUpFT4bXlb1RHhLpp8wtm6M5TgSw=="],
 
